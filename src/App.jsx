@@ -327,7 +327,7 @@ export default function App() {
               )}
             >
               <span className="truncate flex-1 pr-2">{chat.title}</span>
-              <div onClick={(e) => deleteChat(e, chat.id)} className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all">
+              <div onClick={(e) => deleteChat(e, chat.id)} className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 p-1 hover:text-red-500 transition-all">
                 <Trash2 size={14} />
               </div>
             </button>
