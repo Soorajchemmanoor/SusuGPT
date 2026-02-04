@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Bot, Loader2, ChevronDown, Check, Copy, CheckCircle2, Paperclip, X, Plus, Trash2, PanelLeft, Users } from 'lucide-react';
+import { Send, User, Bot, Loader2, ChevronDown, Check, Copy, CheckCircle2, Paperclip, X, Plus, Trash2, PanelLeft, Users, Menu } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -359,7 +359,7 @@ export default function App() {
                 isSidebarOpen && "text-zinc-400"
               )}
             >
-              <PanelLeft size={20} />
+              <Menu size={20} />
             </button>
             <span className="font-bold text-lg lg:text-xl tracking-tight text-zinc-900 dark:text-zinc-100">
               SusuGPT
@@ -398,11 +398,20 @@ export default function App() {
               )}
             </div>
           </div>
+
+          {/* New Chat Button for Mobile */}
+          <button
+            onClick={startNewChat}
+            className="lg:hidden p-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full shadow-md hover:scale-105 active:scale-95 transition-all"
+            title="New Chat"
+          >
+            <Plus size={18} />
+          </button>
         </header>
 
-        {/* Global/Mobile Visitor Count Tooltip when sidebar is closed */}
+        {/* Global/Mobile Visitor Count Tooltip when sidebar is closed - Moved to Top */}
         {!isSidebarOpen && (
-          <div className="absolute bottom-4 left-4 z-30 lg:bottom-4 lg:left-4">
+          <div className="absolute top-16 right-4 z-30 lg:top-16 lg:right-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex items-center gap-2 px-2.5 py-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-800 shadow-lg opacity-60 hover:opacity-100 transition-opacity">
               <Users size={10} className="text-zinc-500" />
               <span className="text-[10px] font-mono font-bold text-zinc-600 dark:text-zinc-400">{visitorCount.toLocaleString()}</span>
