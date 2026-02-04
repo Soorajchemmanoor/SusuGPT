@@ -560,6 +560,9 @@ export default function App() {
             <p className="text-[10px] lg:text-[11px] text-zinc-500 select-none">
               SusuGPT can make mistakes. Check important info.
             </p>
+            <p className="text-[10px] mt-1 text-zinc-400 select-none">
+              Developed by <a href="https://soorajp.com" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-600 dark:hover:text-zinc-200 underline transition-colors">Sooraj Puliyath</a>
+            </p>
           </div>
         </footer>
       </div>
