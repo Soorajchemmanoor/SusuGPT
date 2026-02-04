@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Bot, Loader2, ChevronDown, Check, Copy, CheckCircle2 } from 'lucide-react';
+import { Send, User, Bot, Loader2, ChevronDown, Check, Copy, CheckCircle2, Paperclip, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -8,11 +8,10 @@ import { cn } from './lib/utils';
 
 const API_KEY = import.meta.env.VITE_OPEN_ROUTER_API_KEY;
 
-
 const MODELS = [
-  { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "OpenAI" },
-  { id: "deepseek/deepseek-chat", name: "DeepSeek V3", provider: "DeepSeek" },
-  { id: "anthropic/claude-3-haiku", name: "Claude 3 Haiku", provider: "Anthropic" }
+  { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "OpenAI", vision: true },
+  { id: "deepseek/deepseek-chat", name: "DeepSeek V3", provider: "DeepSeek", vision: false },
+  { id: "anthropic/claude-3-haiku", name: "Claude 3 Haiku", provider: "Anthropic", vision: true }
 ];
 
 const CodeBlock = ({ children, language }) => {
@@ -81,8 +80,10 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState([]);
   const messagesEndRef = useRef(null);
   const menuRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -102,13 +103,63 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAttachedFiles(prev => [...prev, {
+          name: file.name,
+          type: file.type,
+          data: reader.result
+        }]);
+      };
+      if (file.type.startsWith('image/')) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
+      }
+    });
+    // Clear input so same file can be selected again
+    e.target.value = null;
+  };
+
+  const removeFile = (index) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && attachedFiles.length === 0) || isLoading) return;
 
-    const userMessage = { role: 'user', content: input };
+    const currentFiles = [...attachedFiles];
+    const userMessageContent = [];
+
+    if (input.trim()) {
+      userMessageContent.push({ type: "text", text: input });
+    }
+
+    currentFiles.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        userMessageContent.push({
+          type: "image_url",
+          image_url: { url: file.data }
+        });
+      } else {
+        userMessageContent[0].text += `\n\n[File: ${file.name}]\n${file.data}`;
+      }
+    });
+
+    const userMessage = {
+      role: 'user',
+      content: userMessageContent,
+      displayContent: input,
+      files: currentFiles
+    };
+
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    setAttachedFiles([]);
     setIsLoading(true);
 
     try {
@@ -122,7 +173,17 @@ export default function App() {
         },
         body: JSON.stringify({
           model: selectedModel.id,
-          messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
+          messages: [...messages, userMessage].map(m => {
+            if (m.role === 'user' && Array.isArray(m.content)) {
+              // If model doesn't support vision, flatten to text
+              if (!selectedModel.vision) {
+                const text = m.content.find(c => c.type === 'text')?.text || "";
+                return { role: m.role, content: text };
+              }
+              return { role: m.role, content: m.content };
+            }
+            return { role: m.role, content: m.content };
+          }),
         })
       });
 
@@ -143,9 +204,9 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-[#212121] text-zinc-900 dark:text-zinc-100 transition-colors duration-200">
       {/* Header with Model Selector */}
-      <header className="flex items-center justify-between px-4 py-3 sticky top-0 z-20 bg-white/80 dark:bg-[#212121]/80 backdrop-blur-md">
+      <header className="flex items-center justify-between px-4 py-3 sticky top-0 z-20 bg-white/80 dark:bg-[#212121]/80 backdrop-blur-md border-b border-zinc-100 dark:border-zinc-800">
         <div className="flex items-center gap-3">
-          <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <span className="font-bold text-xl tracking-tight text-zinc-900 dark:text-zinc-100">
             SusuGPT
           </span>
           <div className="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800" />
@@ -173,7 +234,7 @@ export default function App() {
                   >
                     <div className="flex flex-col items-start translate-y-[-1px]">
                       <span className="text-[14px] font-medium">{model.name}</span>
-                      <span className="text-[11px] text-zinc-500">{model.provider}</span>
+                      <span className="text-[11px] text-zinc-500">{model.provider} {model.vision ? "• Vision" : ""}</span>
                     </div>
                     {selectedModel.id === model.id && <Check size={16} className="text-zinc-900 dark:text-zinc-100" />}
                   </button>
@@ -203,13 +264,26 @@ export default function App() {
                   </div>
                 )}
                 <div className={cn(
-                  "max-w-[85%] rounded-3xl text-[15px] leading-7 prose dark:prose-invert prose-zinc prose-p:my-0 prose-pre:p-0 prose-pre:bg-transparent",
+                  "max-w-[85%] rounded-3xl text-[15px] leading-7",
                   msg.role === 'user'
                     ? "bg-[#f4f4f4] dark:bg-[#2f2f2f] text-zinc-900 dark:text-zinc-100 px-5 py-3"
-                    : "bg-transparent text-zinc-900 dark:text-zinc-100 py-2"
+                    : "bg-transparent text-zinc-900 dark:text-zinc-100 py-2 prose dark:prose-invert prose-zinc prose-p:my-0 prose-pre:p-0 prose-pre:bg-transparent"
                 )}>
                   {msg.role === 'user' ? (
-                    msg.content
+                    <div className="flex flex-col gap-2">
+                      {msg.files && msg.files.map((file, idx) => (
+                        <div key={idx} className="mb-2">
+                          {file.type.startsWith('image/') ? (
+                            <img src={file.data} alt="uploaded" className="max-w-xs rounded-xl border border-zinc-200 dark:border-zinc-700" />
+                          ) : (
+                            <div className="text-xs p-2 bg-white/50 dark:bg-black/20 rounded-lg border border-zinc-200/50 dark:border-zinc-700/50 italic">
+                              📄 {file.name} (File content attached)
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <div>{msg.displayContent || msg.content}</div>
+                    </div>
                   ) : (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
@@ -250,8 +324,46 @@ export default function App() {
       </main>
 
       {/* Input Bar */}
-      <footer className="w-full max-w-3xl mx-auto p-4 pb-8">
-        <form onSubmit={handleSubmit} className="relative bg-[#f4f4f4] dark:bg-[#2f2f2f] rounded-[26px] p-2 pr-3 flex items-end shadow-sm">
+      <footer className="w-full max-w-3xl mx-auto p-4 pb-8 space-y-4">
+        {/* File Previews */}
+        {attachedFiles.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {attachedFiles.map((file, idx) => (
+              <div key={idx} className="relative group">
+                {file.type.startsWith('image/') ? (
+                  <img src={file.data} alt="preview" className="w-16 h-16 object-cover rounded-xl border-2 border-zinc-200 dark:border-zinc-700 shadow-sm" />
+                ) : (
+                  <div className="w-16 h-16 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-xl border-2 border-zinc-200 dark:border-zinc-700 text-[10px] p-1 text-center break-all shadow-sm">
+                    {file.name}
+                  </div>
+                )}
+                <button
+                  onClick={() => removeFile(idx)}
+                  className="absolute -top-2 -right-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="relative bg-[#f4f4f4] dark:bg-[#2f2f2f] rounded-[26px] p-2 pr-3 flex items-end shadow-sm border border-zinc-200/50 dark:border-zinc-700/50">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            multiple
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2 mb-1.5 ml-1 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-colors"
+          >
+            <Paperclip size={20} />
+          </button>
+
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -261,18 +373,19 @@ export default function App() {
                 handleSubmit(e);
               }
             }}
-            placeholder={`Message ${selectedModel.name.split(' ')[0]}`}
+            placeholder={`Message ${selectedModel.name.split(' ')[0]}...`}
             className="flex-1 bg-transparent border-none outline-none resize-none py-3 px-2 text-[15px] max-h-40 min-h-[44px]"
             rows={1}
           />
+
           <div className="flex gap-2 pb-1.5">
             <button
               type="submit"
-              disabled={!input.trim() || isLoading}
+              disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
               className={cn(
                 "p-2 rounded-full transition-all duration-200",
-                input.trim()
-                  ? "bg-black dark:bg-white text-white dark:text-black"
+                (input.trim() || attachedFiles.length > 0)
+                  ? "bg-black dark:bg-white text-white dark:text-black shadow-md"
                   : "text-zinc-300 dark:text-zinc-600"
               )}
             >
@@ -280,7 +393,7 @@ export default function App() {
             </button>
           </div>
         </form>
-        <div className="text-center mt-3">
+        <div className="text-center">
           <p className="text-[11px] text-zinc-500">
             {selectedModel.provider} can make mistakes. Check important info.
           </p>
