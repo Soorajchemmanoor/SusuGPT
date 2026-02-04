@@ -107,22 +107,15 @@ export default function App() {
     }
   }, [currentChatId, chats]);
 
-  // Global Visitor Counter Logic
+  // Personal Visit Counter Logic
+  const hasIncremented = useRef(false);
   useEffect(() => {
-    const incrementVisitorCount = async () => {
-      try {
-        // Using a free public counter API for real global persistence
-        const response = await fetch("https://api.counterapi.dev/v1/susugpt-visits/hit");
-        const data = await response.json();
-        if (data.count) setVisitorCount(data.count);
-      } catch (error) {
-        console.error("Counter API error, falling back to local:", error);
-        const localCount = parseInt(localStorage.getItem('susugpt_visits') || "0") + 1;
-        localStorage.setItem('susugpt_visits', localCount.toString());
-        setVisitorCount(localCount);
-      }
-    };
-    incrementVisitorCount();
+    if (!hasIncremented.current) {
+      const localVisits = parseInt(localStorage.getItem('susugpt_personal_visits') || "0") + 1;
+      localStorage.setItem('susugpt_personal_visits', localVisits.toString());
+      setVisitorCount(localVisits);
+      hasIncremented.current = true;
+    }
   }, []);
 
   const scrollToBottom = () => {
@@ -338,7 +331,7 @@ export default function App() {
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
             <Users size={16} />
-            <span className="text-xs font-medium">Visitors Count: </span>
+            <span className="text-xs font-medium">Your Visits: </span>
             <span className="text-xs font-bold font-mono px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded-full text-zinc-900 dark:text-zinc-100">
               {visitorCount.toLocaleString()}
             </span>
@@ -413,7 +406,7 @@ export default function App() {
         {!isSidebarOpen && (
           <div className="absolute top-16 right-4 z-30 lg:top-16 lg:right-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex items-center gap-2 px-2.5 py-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-800 shadow-lg opacity-60 hover:opacity-100 transition-opacity">
-              <Users size={10} className="text-zinc-500" />
+              <span className="text-[10px] text-zinc-500">Your Visits:</span>
               <span className="text-[10px] font-mono font-bold text-zinc-600 dark:text-zinc-400">{visitorCount.toLocaleString()}</span>
             </div>
           </div>
