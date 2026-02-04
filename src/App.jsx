@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Bot, Loader2, ChevronDown, Check, Copy, CheckCircle2, Paperclip, X, Plus, Trash2, PanelLeft, Menu } from 'lucide-react';
+import { Send, User, Bot, Loader2, ChevronDown, Check, Copy, CheckCircle2, Paperclip, X, Plus, Trash2, PanelLeft, Users } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { cn } from './lib/utils';
+import initialStats from './data/stats.json';
 
 const API_KEY = import.meta.env.VITE_OPEN_ROUTER_API_KEY;
 
@@ -87,6 +88,7 @@ export default function App() {
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
+  const [visitorCount, setVisitorCount] = useState(initialStats.visitor_count);
 
   const messagesEndRef = useRef(null);
   const menuRef = useRef(null);
@@ -104,6 +106,24 @@ export default function App() {
       setMessages([]);
     }
   }, [currentChatId, chats]);
+
+  // Global Visitor Counter Logic
+  useEffect(() => {
+    const incrementVisitorCount = async () => {
+      try {
+        // Using a free public counter API for real global persistence
+        const response = await fetch("https://api.counterapi.dev/v1/susugpt-visits/hit");
+        const data = await response.json();
+        if (data.count) setVisitorCount(data.count);
+      } catch (error) {
+        console.error("Counter API error, falling back to local:", error);
+        const localCount = parseInt(localStorage.getItem('susugpt_visits') || "0") + 1;
+        localStorage.setItem('susugpt_visits', localCount.toString());
+        setVisitorCount(localCount);
+      }
+    };
+    incrementVisitorCount();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -187,6 +207,7 @@ export default function App() {
           image_url: { url: file.data }
         });
       } else {
+        userMessageContent[0] = userMessageContent[0] || { type: "text", text: "" };
         userMessageContent[0].text += `\n\n[File: ${file.name}]\n${file.data}`;
       }
     });
@@ -240,7 +261,7 @@ export default function App() {
       if (!currentChatId) {
         const newChat = {
           id: Date.now().toString(),
-          title: input.slice(0, 30) || "Image Interaction",
+          title: input.slice(0, 30) || "File/Image Chat",
           messages: finalMessages,
           date: new Date().toISOString()
         };
@@ -312,6 +333,17 @@ export default function App() {
             </button>
           ))}
         </div>
+
+        {/* Visitor Counter at Sidebar Bottom */}
+        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+            <Users size={16} />
+            <span className="text-xs font-medium">Visitors Count: </span>
+            <span className="text-xs font-bold font-mono px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded-full text-zinc-900 dark:text-zinc-100">
+              {visitorCount.toLocaleString()}
+            </span>
+          </div>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -329,7 +361,7 @@ export default function App() {
             >
               <PanelLeft size={20} />
             </button>
-            <span className="font-bold text-lg lg:text-xl tracking-tight text-zinc-900 dark:text-zinc-100 animate-in fade-in duration-500">
+            <span className="font-bold text-lg lg:text-xl tracking-tight text-zinc-900 dark:text-zinc-100">
               SusuGPT
             </span>
             <div className="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800 mx-1 lg:mx-2" />
@@ -368,11 +400,21 @@ export default function App() {
           </div>
         </header>
 
+        {/* Global/Mobile Visitor Count Tooltip/Banner when sidebar is closed */}
+        {!isSidebarOpen && (
+          <div className="absolute bottom-20 left-4 z-30 lg:bottom-4 lg:left-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-800 shadow-xl opacity-80 hover:opacity-100 transition-opacity">
+              <Users size={12} className="text-zinc-500" />
+              <span className="text-[10px] font-mono font-bold">{visitorCount.toLocaleString()}</span>
+            </div>
+          </div>
+        )}
+
         {/* Main Chat Area */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-4">
-              <div className="mb-8 p-3 rounded-full border border-zinc-200 dark:border-zinc-700 animate-bounce transition-all duration-1000">
+              <div className="mb-8 p-3 rounded-full border border-zinc-200 dark:border-zinc-700">
                 <Bot size={40} className="text-zinc-900 dark:text-zinc-100" />
               </div>
               <h2 className="text-xl lg:text-2xl font-semibold tracking-tight text-center">How can I help you today?</h2>
@@ -459,7 +501,7 @@ export default function App() {
                   )}
                   <button
                     onClick={() => removeFile(idx)}
-                    className="absolute -top-2 -right-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full p-1 shadow-lg lg:opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-2 -right-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full p-1 shadow-lg transition-opacity"
                   >
                     <X size={10} />
                   </button>
@@ -474,7 +516,6 @@ export default function App() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="p-2 mb-1.5 ml-1 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-colors shrink-0"
-              title="Attach files"
             >
               <Paperclip size={20} />
             </button>
