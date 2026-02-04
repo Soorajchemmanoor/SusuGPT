@@ -8,6 +8,7 @@ import { cn } from './lib/utils';
 
 const API_KEY = import.meta.env.VITE_OPEN_ROUTER_API_KEY;
 
+
 const MODELS = [
   { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "OpenAI" },
   { id: "deepseek/deepseek-chat", name: "DeepSeek V3", provider: "DeepSeek" },
@@ -117,7 +118,7 @@ export default function App() {
           "Authorization": `Bearer ${API_KEY}`,
           "Content-Type": "application/json",
           "HTTP-Referer": window.location.origin,
-          "X-Title": "ChatGPT Clone",
+          "X-Title": "SusuGPT",
         },
         body: JSON.stringify({
           model: selectedModel.id,
@@ -143,37 +144,43 @@ export default function App() {
     <div className="flex flex-col h-screen bg-white dark:bg-[#212121] text-zinc-900 dark:text-zinc-100 transition-colors duration-200">
       {/* Header with Model Selector */}
       <header className="flex items-center justify-between px-4 py-3 sticky top-0 z-20 bg-white/80 dark:bg-[#212121]/80 backdrop-blur-md">
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-[#2f2f2f] transition-colors group"
-          >
-            <h1 className="font-semibold text-lg text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
-              {selectedModel.name.split(' ')[0]} <span className="text-sm font-normal opacity-50">{selectedModel.name.split(' ').slice(1).join(' ')}</span>
-            </h1>
-            <ChevronDown size={16} className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300" />
-          </button>
+        <div className="flex items-center gap-3">
+          <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            SusuGPT
+          </span>
+          <div className="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800" />
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-[#2f2f2f] transition-colors group"
+            >
+              <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 italic transition-colors">
+                {selectedModel.name}
+              </span>
+              <ChevronDown size={14} className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300" />
+            </button>
 
-          {isModelMenuOpen && (
-            <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-[#2f2f2f] border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 p-2">
-              {MODELS.map((model) => (
-                <button
-                  key={model.id}
-                  onClick={() => {
-                    setSelectedModel(model);
-                    setIsModelMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-3 py-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group"
-                >
-                  <div className="flex flex-col items-start translate-y-[-1px]">
-                    <span className="text-[14px] font-medium">{model.name}</span>
-                    <span className="text-[11px] text-zinc-500">{model.provider}</span>
-                  </div>
-                  {selectedModel.id === model.id && <Check size={16} className="text-zinc-900 dark:text-zinc-100" />}
-                </button>
-              ))}
-            </div>
-          )}
+            {isModelMenuOpen && (
+              <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-[#2f2f2f] border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 p-2">
+                {MODELS.map((model) => (
+                  <button
+                    key={model.id}
+                    onClick={() => {
+                      setSelectedModel(model);
+                      setIsModelMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group"
+                  >
+                    <div className="flex flex-col items-start translate-y-[-1px]">
+                      <span className="text-[14px] font-medium">{model.name}</span>
+                      <span className="text-[11px] text-zinc-500">{model.provider}</span>
+                    </div>
+                    {selectedModel.id === model.id && <Check size={16} className="text-zinc-900 dark:text-zinc-100" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
