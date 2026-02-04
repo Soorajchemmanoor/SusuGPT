@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Bot, Loader2, ChevronDown, Check, Copy, CheckCircle2, Paperclip, X, Plus, MessageSquare, Trash2, PanelLeft } from 'lucide-react';
+import { Send, User, Bot, Loader2, ChevronDown, Check, Copy, CheckCircle2, Paperclip, X, Plus, Trash2, PanelLeft, Menu } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -86,7 +86,7 @@ export default function App() {
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
 
   const messagesEndRef = useRef(null);
   const menuRef = useRef(null);
@@ -114,6 +114,15 @@ export default function App() {
   }, [messages]);
 
   useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) setIsSidebarOpen(true);
+      else setIsSidebarOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsModelMenuOpen(false);
@@ -127,6 +136,7 @@ export default function App() {
     setCurrentChatId(null);
     setMessages([]);
     setAttachedFiles([]);
+    if (window.innerWidth < 1024) setIsSidebarOpen(false);
   };
 
   const deleteChat = (e, id) => {
@@ -227,11 +237,10 @@ export default function App() {
       const finalMessages = [...newMessages, assistantMessage];
       setMessages(finalMessages);
 
-      // Save to chat history
       if (!currentChatId) {
         const newChat = {
           id: Date.now().toString(),
-          title: input.slice(0, 30) || "Image Search",
+          title: input.slice(0, 30) || "Image Interaction",
           messages: finalMessages,
           date: new Date().toISOString()
         };
@@ -254,10 +263,18 @@ export default function App() {
   return (
     <div className="flex h-screen bg-white dark:bg-[#171717] text-zinc-900 dark:text-zinc-100 transition-colors duration-200 overflow-hidden text-sm">
 
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && window.innerWidth < 1024 && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden backdrop-blur-[2px]"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside className={cn(
-        "bg-[#f9f9f9] dark:bg-[#171717] border-r border-zinc-200 dark:border-zinc-800 flex flex-col transition-all duration-300",
-        isSidebarOpen ? "w-[260px]" : "w-0 -translate-x-full border-none"
+        "fixed lg:relative inset-y-0 left-0 z-50 bg-[#f9f9f9] dark:bg-[#171717] border-r border-zinc-200 dark:border-zinc-800 flex flex-col transition-all duration-300 transform",
+        isSidebarOpen ? "w-[260px] translate-x-0" : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
       )}>
         <div className="p-3">
           <button
@@ -270,6 +287,7 @@ export default function App() {
               </div>
               <span className="font-medium">New Chat</span>
             </div>
+            <PanelLeft size={16} className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200" />
           </button>
         </div>
 
@@ -278,14 +296,17 @@ export default function App() {
           {chats.map(chat => (
             <button
               key={chat.id}
-              onClick={() => setCurrentChatId(chat.id)}
+              onClick={() => {
+                setCurrentChatId(chat.id);
+                if (window.innerWidth < 1024) setIsSidebarOpen(false);
+              }}
               className={cn(
                 "w-full flex items-center justify-between group px-3 py-2 rounded-lg transition-all text-left",
                 currentChatId === chat.id ? "bg-zinc-200 dark:bg-[#2f2f2f]" : "hover:bg-zinc-100 dark:hover:bg-[#2f2f2f]/50"
               )}
             >
               <span className="truncate flex-1 pr-2">{chat.title}</span>
-              <div onClick={(e) => deleteChat(e, chat.id)} className="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all">
+              <div onClick={(e) => deleteChat(e, chat.id)} className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all">
                 <Trash2 size={14} />
               </div>
             </button>
@@ -297,23 +318,27 @@ export default function App() {
       <div className="flex-1 flex flex-col relative min-w-0">
 
         {/* Header */}
-        <header className="flex items-center justify-between px-4 py-3 sticky top-0 z-20 bg-white dark:bg-[#171717] border-b border-zinc-100 dark:border-zinc-800">
-          <div className="flex items-center gap-3">
-            {!isSidebarOpen && (
-              <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg">
-                <PanelLeft size={20} />
-              </button>
-            )}
-            <span className="font-bold text-xl tracking-tight text-zinc-900 dark:text-zinc-100 pl-4">
+        <header className="flex items-center justify-between px-2 lg:px-4 py-3 sticky top-0 z-20 bg-white/80 dark:bg-[#171717]/80 backdrop-blur-md border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center gap-1 lg:gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className={cn(
+                "p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors",
+                isSidebarOpen && "text-zinc-400"
+              )}
+            >
+              <PanelLeft size={20} />
+            </button>
+            <span className="font-bold text-lg lg:text-xl tracking-tight text-zinc-900 dark:text-zinc-100 animate-in fade-in duration-500">
               SusuGPT
             </span>
-            <div className="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800 mx-1" />
+            <div className="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800 mx-1 lg:mx-2" />
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group"
+                className="flex items-center gap-1 px-2 lg:px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group"
               >
-                <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 italic transition-colors">
+                <span className="text-xs lg:text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 italic">
                   {selectedModel.name}
                 </span>
                 <ChevronDown size={14} className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300" />
@@ -341,35 +366,30 @@ export default function App() {
               )}
             </div>
           </div>
-          {isSidebarOpen && (
-            <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg lg:hidden">
-              <PanelLeft size={20} />
-            </button>
-          )}
         </header>
 
         {/* Main Chat Area */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-4">
-              <div className="mb-8 p-3 rounded-full border border-zinc-200 dark:border-zinc-700">
+              <div className="mb-8 p-3 rounded-full border border-zinc-200 dark:border-zinc-700 animate-bounce transition-all duration-1000">
                 <Bot size={40} className="text-zinc-900 dark:text-zinc-100" />
               </div>
-              <h2 className="text-2xl font-semibold tracking-tight text-center">How can I help you today?</h2>
+              <h2 className="text-xl lg:text-2xl font-semibold tracking-tight text-center">How can I help you today?</h2>
             </div>
           ) : (
             <div className="max-w-3xl mx-auto py-8 px-4 space-y-8">
               {messages.map((msg, i) => (
-                <div key={i} className={cn("flex gap-5", msg.role === 'user' ? "justify-end" : "justify-start")}>
+                <div key={i} className={cn("flex gap-3 lg:gap-5 animate-in fade-in slide-in-from-bottom-2 duration-300", msg.role === 'user' ? "justify-end" : "justify-start")}>
                   {msg.role === 'assistant' && (
                     <div className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 mt-1">
                       <Bot size={18} />
                     </div>
                   )}
                   <div className={cn(
-                    "max-w-[85%] rounded-3xl text-[15px] leading-7",
+                    "max-w-[90%] lg:max-w-[85%] rounded-3xl text-[15px] leading-7",
                     msg.role === 'user'
-                      ? "bg-[#f4f4f4] dark:bg-[#2f2f2f] text-zinc-900 dark:text-zinc-100 px-5 py-3"
+                      ? "bg-[#f4f4f4] dark:bg-[#2f2f2f] text-zinc-900 dark:text-zinc-100 px-4 lg:px-5 py-2 lg:py-3 shadow-sm"
                       : "bg-transparent text-zinc-900 dark:text-zinc-100 py-2 prose dark:prose-invert prose-zinc prose-p:my-0 prose-pre:p-0 prose-pre:bg-transparent"
                   )}>
                     {msg.role === 'user' ? (
@@ -377,15 +397,15 @@ export default function App() {
                         {msg.files && msg.files.map((file, idx) => (
                           <div key={idx} className="mb-2">
                             {file.type.startsWith('image/') ? (
-                              <img src={file.data} alt="uploaded" className="max-w-xs rounded-xl border border-zinc-200 dark:border-zinc-700" />
+                              <img src={file.data} alt="uploaded" className="max-w-full lg:max-w-xs rounded-xl border border-zinc-200 dark:border-zinc-700" />
                             ) : (
                               <div className="text-xs p-2 bg-white/50 dark:bg-black/20 rounded-lg border border-zinc-200/50 dark:border-zinc-700/50 italic">
-                                📄 {file.name} (File content attached)
+                                📄 {file.name}
                               </div>
                             )}
                           </div>
                         ))}
-                        <div>{msg.displayContent || msg.content}</div>
+                        <div className="break-words">{msg.displayContent || msg.content}</div>
                       </div>
                     ) : (
                       <ReactMarkdown
@@ -412,11 +432,11 @@ export default function App() {
                 </div>
               ))}
               {isLoading && (
-                <div className="flex gap-5">
+                <div className="flex gap-4">
                   <div className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0">
                     <Bot size={18} className="animate-pulse" />
                   </div>
-                  <div className="py-3 text-zinc-400 italic">Thinking...</div>
+                  <div className="py-2 text-zinc-400 italic text-sm">Thinking...</div>
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -425,35 +445,36 @@ export default function App() {
         </main>
 
         {/* Input Bar */}
-        <footer className="w-full max-w-3xl mx-auto p-4 pb-8 space-y-4">
+        <footer className="w-full max-w-3xl mx-auto p-4 pb-12 lg:pb-8 space-y-4">
           {attachedFiles.length > 0 && (
-            <div className="flex flex-wrap gap-2 px-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex flex-wrap gap-2 px-2 animate-in fade-in slide-in-from-bottom-2 duration-300 overflow-hidden">
               {attachedFiles.map((file, idx) => (
                 <div key={idx} className="relative group">
                   {file.type.startsWith('image/') ? (
-                    <img src={file.data} alt="preview" className="w-16 h-16 object-cover rounded-xl border-2 border-zinc-200 dark:border-zinc-700 shadow-sm" />
+                    <img src={file.data} alt="preview" className="w-12 lg:w-16 h-12 lg:h-16 object-cover rounded-xl border-2 border-zinc-200 dark:border-zinc-700 shadow-sm" />
                   ) : (
-                    <div className="w-16 h-16 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-xl border-2 border-zinc-200 dark:border-zinc-700 text-[10px] p-1 text-center break-all shadow-sm">
+                    <div className="w-12 lg:w-16 h-12 lg:h-16 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-xl border-2 border-zinc-200 dark:border-zinc-700 text-[9px] p-1 text-center break-all shadow-sm">
                       {file.name}
                     </div>
                   )}
                   <button
                     onClick={() => removeFile(idx)}
-                    className="absolute -top-2 -right-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-2 -right-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full p-1 shadow-lg lg:opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <X size={12} />
+                    <X size={10} />
                   </button>
                 </div>
               ))}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="relative bg-[#f4f4f4] dark:bg-[#2f2f2f] rounded-[26px] p-2 pr-3 flex items-end shadow-sm border border-zinc-200/50 dark:border-zinc-700/50">
+          <form onSubmit={handleSubmit} className="relative bg-[#f4f4f4] dark:bg-[#2f2f2f] rounded-[26px] p-1.5 lg:p-2 pr-3 flex items-end shadow-sm border border-zinc-200/50 dark:border-zinc-700/50 group focus-within:ring-1 focus-within:ring-zinc-300 dark:focus-within:ring-zinc-600 transition-all">
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 mb-1.5 ml-1 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-colors"
+              className="p-2 mb-1.5 ml-1 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-colors shrink-0"
+              title="Attach files"
             >
               <Paperclip size={20} />
             </button>
@@ -467,18 +488,18 @@ export default function App() {
                 }
               }}
               placeholder={`Message SusuGPT...`}
-              className="flex-1 bg-transparent border-none outline-none resize-none py-3 px-2 text-[15px] max-h-40 min-h-[44px]"
+              className="flex-1 bg-transparent border-none outline-none resize-none py-3 px-2 text-[15px] max-h-40 min-h-[44px] placeholder-zinc-400"
               rows={1}
             />
-            <div className="flex gap-2 pb-1.5">
+            <div className="flex gap-2 pb-1.5 shrink-0">
               <button
                 type="submit"
                 disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
                 className={cn(
                   "p-2 rounded-full transition-all duration-200",
                   (input.trim() || attachedFiles.length > 0)
-                    ? "bg-black dark:bg-white text-white dark:text-black shadow-md"
-                    : "text-zinc-300 dark:text-zinc-600"
+                    ? "bg-black dark:bg-white text-white dark:text-black shadow-md scale-100"
+                    : "text-zinc-300 dark:text-zinc-600 scale-95"
                 )}
               >
                 <Send size={18} />
@@ -486,7 +507,7 @@ export default function App() {
             </div>
           </form>
           <div className="text-center">
-            <p className="text-[11px] text-zinc-500">
+            <p className="text-[10px] lg:text-[11px] text-zinc-500 select-none">
               SusuGPT can make mistakes. Check important info.
             </p>
           </div>
