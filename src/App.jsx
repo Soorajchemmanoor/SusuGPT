@@ -400,12 +400,12 @@ export default function App() {
           </div>
         </header>
 
-        {/* Global/Mobile Visitor Count Tooltip/Banner when sidebar is closed */}
+        {/* Global/Mobile Visitor Count Tooltip when sidebar is closed */}
         {!isSidebarOpen && (
-          <div className="absolute bottom-20 left-4 z-30 lg:bottom-4 lg:left-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-800 shadow-xl opacity-80 hover:opacity-100 transition-opacity">
-              <Users size={12} className="text-zinc-500" />
-              <span className="text-[10px] font-mono font-bold">{visitorCount.toLocaleString()}</span>
+          <div className="absolute bottom-4 left-4 z-30 lg:bottom-4 lg:left-4">
+            <div className="flex items-center gap-2 px-2.5 py-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-800 shadow-lg opacity-60 hover:opacity-100 transition-opacity">
+              <Users size={10} className="text-zinc-500" />
+              <span className="text-[10px] font-mono font-bold text-zinc-600 dark:text-zinc-400">{visitorCount.toLocaleString()}</span>
             </div>
           </div>
         )}
