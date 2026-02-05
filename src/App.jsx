@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import LandingPage from './components/LandingPage';
+
 import { Send, User, Bot, Loader2, ChevronDown, Check, Copy, CheckCircle2, Paperclip, X, Plus, Trash2, PanelLeft, Users, Menu } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -89,6 +91,8 @@ export default function App() {
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
   const [visitorCount, setVisitorCount] = useState(initialStats.visitor_count);
+  const [isLanding, setIsLanding] = useState(!localStorage.getItem('susugpt_user_email'));
+
 
   const messagesEndRef = useRef(null);
   const menuRef = useRef(null);
@@ -274,6 +278,10 @@ export default function App() {
     }
   };
 
+  if (isLanding) {
+    return <LandingPage onGetStarted={() => setIsLanding(false)} />;
+  }
+
   return (
     <div className="flex h-screen bg-white dark:bg-[#171717] text-zinc-900 dark:text-zinc-100 transition-colors duration-200 overflow-hidden text-sm">
 
@@ -327,14 +335,25 @@ export default function App() {
           ))}
         </div>
 
-        {/* Visitor Counter at Sidebar Bottom */}
-        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-            <Users size={16} />
-            <span className="text-xs font-medium">Your Visits: </span>
-            <span className="text-xs font-bold font-mono px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded-full text-zinc-900 dark:text-zinc-100">
-              {visitorCount.toLocaleString()}
-            </span>
+        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+              <Users size={16} />
+              <span className="text-xs font-medium">Your Visits: </span>
+              <span className="text-xs font-bold font-mono px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded-full text-zinc-900 dark:text-zinc-100">
+                {visitorCount.toLocaleString()}
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.removeItem('susugpt_user_email');
+                window.location.reload();
+              }}
+              className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-zinc-400 hover:text-red-500 rounded-lg transition-colors"
+              title="Logout"
+            >
+              <X size={16} />
+            </button>
           </div>
         </div>
       </aside>
