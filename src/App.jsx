@@ -12,9 +12,11 @@ import initialStats from './data/stats.json';
 const API_KEY = import.meta.env.VITE_OPEN_ROUTER_API_KEY;
 
 const MODELS = [
-  { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "OpenAI", vision: true },
-  { id: "deepseek/deepseek-chat", name: "DeepSeek V3", provider: "DeepSeek", vision: false },
-  { id: "anthropic/claude-3-haiku", name: "Claude 3 Haiku", provider: "Anthropic", vision: true }
+  { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "OpenAI", vision: true, paid: true },
+  { id: "google/gemma-3-12b-it:free", name: "Gemma 3 12B", provider: "Google", vision: false, free: true },
+  { id: "mistralai/mistral-small-3.1-24b-instruct:free", name: "Mistral Small", provider: "Mistral", vision: false, free: true },
+  { id: "deepseek/deepseek-chat", name: "DeepSeek V3", provider: "DeepSeek", vision: false, paid: true },
+  { id: "anthropic/claude-3-haiku", name: "Claude 3 Haiku", provider: "Anthropic", vision: true, paid: true }
 ];
 
 const CodeBlock = ({ children, language }) => {
@@ -247,9 +249,23 @@ export default function App() {
       });
 
       const data = await response.json();
+
+      if (response.status === 429) {
+        throw new Error(`${selectedModel.name} is currently overloaded. Please try again in a few seconds or switch to a different model.`);
+      }
+
+      if (response.status === 402) {
+        throw new Error(`${selectedModel.name} has reached its free limit. Please try another model.`);
+      }
+
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error(data.error?.message || "The AI model didn't return a response. It might be temporarily unavailable.");
+      }
+
       const assistantMessage = {
         role: 'assistant',
-        content: data.choices[0].message.content
+        content: data.choices[0].message.content,
+        modelName: data.model || selectedModel.name
       };
 
       const finalMessages = [...newMessages, assistantMessage];
@@ -272,7 +288,11 @@ export default function App() {
 
     } catch (error) {
       console.error("Error:", error);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Error: Could not connect to the API.' }]);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `Error: ${error.message || 'Could not connect to the API.'}`,
+        modelName: selectedModel.name
+      }]);
     } finally {
       setIsLoading(false);
     }
@@ -385,6 +405,12 @@ export default function App() {
                 <span className="text-xs lg:text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 italic">
                   {selectedModel.name}
                 </span>
+                {selectedModel.free && (
+                  <span className="text-[9px] font-black bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500 uppercase tracking-widest ml-1">Free</span>
+                )}
+                {selectedModel.paid && (
+                  <span className="text-[9px] font-black bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-1.5 py-0.5 rounded uppercase tracking-widest ml-1">Paid</span>
+                )}
                 <ChevronDown size={14} className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300" />
               </button>
 
@@ -400,7 +426,15 @@ export default function App() {
                       className="w-full flex items-center justify-between px-3 py-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group"
                     >
                       <div className="flex flex-col items-start translate-y-[-1px]">
-                        <span className="text-[14px] font-medium">{model.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[14px] font-medium">{model.name}</span>
+                          {model.free && (
+                            <span className="text-[9px] font-black bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500 uppercase tracking-widest">Free</span>
+                          )}
+                          {model.paid && (
+                            <span className="text-[9px] font-black bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-1.5 py-0.5 rounded uppercase tracking-widest">Paid</span>
+                          )}
+                        </div>
                         <span className="text-[11px] text-zinc-500">{model.provider} {model.vision ? "• Vision" : ""}</span>
                       </div>
                       {selectedModel.id === model.id && <Check size={16} className="text-zinc-900 dark:text-zinc-100" />}
@@ -453,7 +487,7 @@ export default function App() {
                     "max-w-[90%] lg:max-w-[85%] rounded-3xl text-[15px] leading-7",
                     msg.role === 'user'
                       ? "bg-[#f4f4f4] dark:bg-[#2f2f2f] text-zinc-900 dark:text-zinc-100 px-4 lg:px-5 py-2 lg:py-3 shadow-sm"
-                      : "bg-transparent text-zinc-900 dark:text-zinc-100 py-2 prose dark:prose-invert prose-zinc prose-p:my-0 prose-pre:p-0 prose-pre:bg-transparent"
+                      : "bg-transparent text-zinc-900 dark:text-zinc-100 pt-2 pb-1 prose dark:prose-invert prose-zinc prose-p:my-0 prose-pre:p-0 prose-pre:bg-transparent"
                   )}>
                     {msg.role === 'user' ? (
                       <div className="flex flex-col gap-2">
@@ -490,6 +524,12 @@ export default function App() {
                       >
                         {msg.content}
                       </ReactMarkdown>
+                    )}
+                    {msg.role === 'assistant' && msg.modelName && (
+                      <div className="mt-1 text-[9px] leading-[5px] font-black text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5 uppercase tracking-widest select-none opacity-80">
+                        <div className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                        Generated by {msg.modelName}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -549,7 +589,10 @@ export default function App() {
                   handleSubmit(e);
                 }
               }}
-              placeholder={`Message SusuGPT...`}
+              placeholder={`Message ${selectedModel.name}...`}
+              spellCheck="false"
+              data-gramm="false"
+              data-quillbot="false"
               className="flex-1 bg-transparent border-none outline-none resize-none py-3 px-2 text-[15px] max-h-40 min-h-[44px] placeholder-zinc-400"
               rows={1}
             />

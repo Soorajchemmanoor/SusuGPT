@@ -389,7 +389,7 @@ export default function LandingPage({ onGetStarted }) {
                                                 value={otpInput}
                                                 onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
                                                 placeholder="0000"
-                                                className="w-48 tracking-[0.8em] text-center py-6 rounded-3xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-black dark:focus:border-white outline-none text-4xl font-black shadow-inner"
+                                                className="w-full max-w-[280px] tracking-[0.5em] text-center pl-[0.5em] py-7 rounded-[32px] bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-black dark:focus:border-white outline-none text-4xl font-black shadow-inner transition-all"
                                             />
                                         </div>
                                         {errorMessage && <p className="text-red-500 text-xs font-black uppercase text-center animate-shake tracking-widest">{errorMessage}</p>}
