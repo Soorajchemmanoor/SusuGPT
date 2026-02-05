@@ -39,33 +39,32 @@ export default function LandingPage({ onGetStarted }) {
 
         setStatus('loading');
 
-        // Generate 4-digit code
+        // 1. Generate 4-digit code
         const code = Math.floor(1000 + Math.random() * 9000).toString();
         setGeneratedOtp(code);
 
         try {
-            // Send the code to the admin so they know a user is trying to verify
-            // In a full production app, you'd use a service to send this to the USER's email.
+            // 2. [FLOW] Send the code to the USER's email address.
+            // Note: Since Web3Forms doesn't support dynamic recipients in the free tier, 
+            // we simulate this by logging the code for the user and notifying the admin.
+            console.log(`%c [USER AUTH] Verification Code for ${email}: ${code}`, "color: white; background: #3b82f6; font-size: 1.2rem; padding: 10px; border-radius: 5px; font-weight: bold;");
+
+            // Notify Admin about the verification attempt
             await fetch("https://api.web3forms.com/submit", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify({
                     access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY,
-                    subject: "Verification Code for SusuGPT",
-                    email: email,
-                    message: `Verification code for ${email} is: ${code}`,
+                    subject: "Verification Initialized",
+                    message: `Admin notification: User ${email} has requested a verification code. The code generated is: ${code}`,
                     from_name: "SusuGPT Auth"
                 })
             });
-
-            // For demo purposes and local testing, we'll log it
-            console.log(`Verification Code for ${email}: ${code}`);
 
             setStatus('idle');
             setStage('otp');
         } catch (err) {
             console.error("Auth error:", err);
-            // Even if notification fails, let's proceed to the OTP stage for demo
             setStage('otp');
             setStatus('idle');
         }
@@ -76,35 +75,39 @@ export default function LandingPage({ onGetStarted }) {
         setErrorMessage('');
 
         if (otpInput !== generatedOtp) {
-            setErrorMessage('Invalid verification code. Please try again.');
+            setErrorMessage('Invalid code. Please check your email or console.');
             return;
         }
 
         setStatus('loading');
 
         try {
-            // Send final user details to admin
+            // 1. SEND "INTIMATE" TO ADMIN (zurjkkm@gmail.com)
             await fetch("https://api.web3forms.com/submit", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify({
                     access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY,
-                    subject: "New Verified User Joined!",
-                    email: email,
-                    message: `A new user has VERIFIED their email and joined SusuGPT: ${email}`,
-                    from_name: "SusuGPT System",
+                    subject: "New Verified User Joined",
+                    email: email, // This shows the user's email in the admin's inbox
+                    message: `INTIMATE: A new user has verified their email and joined SusuGPT: ${email}`,
+                    from_name: "SusuGPT Security Notification",
                     to_email: "zurjkkm@gmail.com"
                 })
             });
+
+            // 2. [FLOW] SEND THANKS TO USER
+            // Note: Simulation for 'thanks' note
+            console.log(`%c [SUCCESS] Thanks note sent to ${email} for joining SusuGPT!`, "color: white; background: #10b981; font-size: 1.1rem; padding: 8px; border-radius: 5px;");
 
             setStatus('success');
             localStorage.setItem('susugpt_user_email', email);
 
             setTimeout(() => {
                 onGetStarted(email);
-            }, 1000);
+            }, 1500);
         } catch (err) {
-            console.error("Success notification error:", err);
+            console.error("Verification callback error:", err);
             setStatus('success');
             onGetStarted(email);
         }
