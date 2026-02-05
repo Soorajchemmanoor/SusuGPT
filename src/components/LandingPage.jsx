@@ -30,6 +30,7 @@ export default function LandingPage({ onGetStarted }) {
     const handleSendCode = async (e) => {
         e.preventDefault();
         setErrorMessage('');
+        console.log("Attempting to send code to:", email);
 
         const error = validateEmail(email);
         if (error) {
@@ -44,49 +45,30 @@ export default function LandingPage({ onGetStarted }) {
         setGeneratedOtp(code);
 
         try {
-            // 2. [FLOW] Send the code to the USER's email account.
-            // Using Resend API for professional transactional email delivery.
-            // Note: If VITE_RESEND_API_KEY is not set, we fallback to console for testing.
-            const resendKey = import.meta.env.VITE_RESEND_API_KEY;
+            // 2. Call Vercel Serverless Function to send OTP via Resend
+            const response = await fetch("/api/send-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, code })
+            });
 
-            if (resendKey) {
-                const response = await fetch("https://api.resend.com/emails", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${resendKey}`
-                    },
-                    body: JSON.stringify({
-                        from: "SusuGPT Auth <onboarding@resend.dev>",
-                        to: email,
-                        subject: "Your SusuGPT Verification Code",
-                        html: `
-                            <div style="font-family: sans-serif; max-width: 400px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                                <h1 style="color: #333; text-align: center;">SusuGPT</h1>
-                                <p style="font-size: 16px; color: #666; text-align: center;">Welcome to the Arena.</p>
-                                <div style="background: #f4f4f4; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0;">
-                                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #3b82f6;">${code}</span>
-                                </div>
-                                <p style="font-size: 14px; color: #999; text-align: center;">Enter this code on the landing page to continue.</p>
-                            </div>
-                        `
-                    })
-                });
-
-                if (!response.ok) throw new Error("Resend delivery failed");
-                console.log(`%c [RESEND] Code sent to ${email}`, "color: #10b981; font-weight: bold;");
+            if (response.ok) {
+                console.log("Serverless Mail Success!");
+                setStatus('idle');
+                setStage('otp');
             } else {
-                // FALLBACK for development if Resend key is missing
-                console.warn("VITE_RESEND_API_KEY is missing. Code logged to console for development.");
-                console.log(`%c [USER AUTH] Verification Code for ${email}: ${code}`, "color: white; background: #3b82f6; font-size: 1.2rem; padding: 10px; border-radius: 5px; font-weight: bold;");
+                const errorData = await response.json();
+                console.error("Serverless Error:", errorData);
+                throw new Error(errorData.message || "Failed to send");
             }
+        } catch (err) {
+            console.error("Auth flow error:", err);
+            // Fallback for development (if not yet deployed to Vercel)
+            console.log(`%c [DEBUG] Code for ${email}: ${code}`, "color: white; background: #3b82f6; font-size: 1.2rem; padding: 10px; border-radius: 5px; font-weight: bold;");
 
+            setErrorMessage("Email delivery failed. If not deployed on Vercel, check browser console (F12) for the code.");
             setStatus('idle');
             setStage('otp');
-        } catch (err) {
-            console.error("Auth error:", err);
-            setErrorMessage("Failed to send verification code. Please try again.");
-            setStatus('idle');
         }
     };
 
@@ -262,7 +244,7 @@ export default function LandingPage({ onGetStarted }) {
                                         </div>
                                         <h3 className="text-2xl font-black tracking-tight">Verify Identity</h3>
                                         <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
-                                            Check your console for the security code sent to <br />
+                                            Check your inbox for the security code sent to <br />
                                             <span className="text-zinc-950 dark:text-white font-bold">{email}</span>
                                         </p>
                                     </div>
