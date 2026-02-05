@@ -66,7 +66,7 @@ export default function LandingPage({ onGetStarted }) {
             // Fallback for development (if not yet deployed to Vercel)
             console.log(`%c [DEBUG] Code for ${email}: ${code}`, "color: white; background: #3b82f6; font-size: 1.2rem; padding: 10px; border-radius: 5px; font-weight: bold;");
 
-            setErrorMessage("Email delivery failed. If not deployed on Vercel, check browser console (F12) for the code.");
+            setErrorMessage("We couldn't send the code. Please try again later or contact support.");
             setStatus('idle');
             setStage('otp');
         }

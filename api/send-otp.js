@@ -25,13 +25,12 @@ export default async function handler(req, res) {
                 "Authorization": `Bearer ${resendKey}`
             },
             body: JSON.stringify({
-                from: "SusuGPT Auth <onboarding@resend.dev>",
+                from: "SusuGPT Auth <auth@soorajp.com>",
                 to: email,
                 subject: "Your SusuGPT Verification Code",
                 html: `
           <div style="font-family: sans-serif; max-width: 400px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
             <h1 style="color: #333; text-align: center;">SusuGPT</h1>
-            <p style="font-size: 16px; color: #666; text-align: center;">Welcome to the Arena.</p>
             <div style="background: #f4f4f4; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0;">
               <span style="font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #3b82f6;">${code}</span>
             </div>
