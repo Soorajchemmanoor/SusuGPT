@@ -44,30 +44,48 @@ export default function LandingPage({ onGetStarted }) {
         setGeneratedOtp(code);
 
         try {
-            // 2. [FLOW] Send the code to the USER's email address.
-            // Note: This triggers the Auto-Response in Web3Forms if enabled in your dashboard.
-            const response = await fetch("https://api.web3forms.com/submit", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Accept": "application/json" },
-                body: JSON.stringify({
-                    access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY,
-                    email: email, // Required to trigger auto-response to the user
-                    subject: "Your SusuGPT Verification Code",
-                    message: `Your verification code is: ${code}`,
-                    from_name: "SusuGPT Auth"
-                })
-            });
+            // 2. [FLOW] Send the code to the USER's email account.
+            // Using Resend API for professional transactional email delivery.
+            // Note: If VITE_RESEND_API_KEY is not set, we fallback to console for testing.
+            const resendKey = import.meta.env.VITE_RESEND_API_KEY;
 
-            if (response.ok) {
-                console.log(`%c [SUCCESS] Code sent to ${email}`, "color: #10b981; font-weight: bold;");
-                setStatus('idle');
-                setStage('otp');
+            if (resendKey) {
+                const response = await fetch("https://api.resend.com/emails", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${resendKey}`
+                    },
+                    body: JSON.stringify({
+                        from: "SusuGPT Auth <onboarding@resend.dev>",
+                        to: email,
+                        subject: "Your SusuGPT Verification Code",
+                        html: `
+                            <div style="font-family: sans-serif; max-width: 400px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                                <h1 style="color: #333; text-align: center;">SusuGPT</h1>
+                                <p style="font-size: 16px; color: #666; text-align: center;">Welcome to the Arena.</p>
+                                <div style="background: #f4f4f4; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0;">
+                                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #3b82f6;">${code}</span>
+                                </div>
+                                <p style="font-size: 14px; color: #999; text-align: center;">Enter this code on the landing page to continue.</p>
+                            </div>
+                        `
+                    })
+                });
+
+                if (!response.ok) throw new Error("Resend delivery failed");
+                console.log(`%c [RESEND] Code sent to ${email}`, "color: #10b981; font-weight: bold;");
             } else {
-                throw new Error("Relay failed");
+                // FALLBACK for development if Resend key is missing
+                console.warn("VITE_RESEND_API_KEY is missing. Code logged to console for development.");
+                console.log(`%c [USER AUTH] Verification Code for ${email}: ${code}`, "color: white; background: #3b82f6; font-size: 1.2rem; padding: 10px; border-radius: 5px; font-weight: bold;");
             }
+
+            setStatus('idle');
+            setStage('otp');
         } catch (err) {
             console.error("Auth error:", err);
-            setErrorMessage("Failed to send code. Please try again later.");
+            setErrorMessage("Failed to send verification code. Please try again.");
             setStatus('idle');
         }
     };
@@ -77,30 +95,28 @@ export default function LandingPage({ onGetStarted }) {
         setErrorMessage('');
 
         if (otpInput !== generatedOtp) {
-            setErrorMessage('Invalid code. Please check your console.');
+            setErrorMessage('Invalid code. Please check your email.');
             return;
         }
 
         setStatus('loading');
 
         try {
-            // 1. SEND "INTIMATE" TO ADMIN (zurjkkm@gmail.com)
+            // 1. [FLOW] Notify ADMIN (zurjkkm@gmail.com) upon successful verification
+            // Using Web3Forms for the admin notification as requested.
             await fetch("https://api.web3forms.com/submit", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify({
                     access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY,
-                    subject: "New Verified User Joined",
-                    email: email, // This shows the user's email in the admin's inbox
-                    message: `INTIMATE: A new user has verified their email and joined SusuGPT: ${email}`,
-                    from_name: "SusuGPT Security Notification",
+                    subject: "New Verified User on SusuGPT",
+                    message: `Verified User Alert: ${email} has successfully verified their account and joined the platform.`,
+                    from_name: "SusuGPT System Notifications",
                     to_email: "zurjkkm@gmail.com"
                 })
             });
 
-            // 2. [FLOW] SEND THANKS TO USER
-            // Note: Simulation for 'thanks' note
-            console.log(`%c [SUCCESS] Thanks note sent to ${email} for joining SusuGPT!`, "color: white; background: #10b981; font-size: 1.1rem; padding: 8px; border-radius: 5px;");
+            console.log(`%c [ADMIN NOTIFIED] Success sent for ${email}`, "color: #10b981; font-weight: bold;");
 
             setStatus('success');
             localStorage.setItem('susugpt_user_email', email);
@@ -110,6 +126,7 @@ export default function LandingPage({ onGetStarted }) {
             }, 1500);
         } catch (err) {
             console.error("Verification callback error:", err);
+            // Even if admin notification fails, we allow the user to proceed
             setStatus('success');
             onGetStarted(email);
         }
