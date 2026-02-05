@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
-import { Mail, ArrowRight, Loader2, Bot, Shield, Zap, CheckCircle2, Globe, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+    Mail, ArrowRight, Loader2, Bot, Shield, Zap,
+    CheckCircle2, Globe, Sparkles, Lock, MessageSquare,
+    Cpu, Layers, ShieldCheck, Headphones, Send,
+    Menu, X, ChevronRight, Github, Twitter
+} from 'lucide-react';
 
 const TEMP_EMAIL_DOMAINS = [
     'mailinator.com', 'guerrillamail.com', 'yopmail.com', 'temp-mail.org',
@@ -13,39 +18,42 @@ export default function LandingPage({ onGetStarted }) {
     const [otpInput, setOtpInput] = useState('');
     const [generatedOtp, setGeneratedOtp] = useState('');
     const [stage, setStage] = useState('email'); // email, otp
-    const [status, setStatus] = useState('idle'); // idle, loading, success, error
+    const [status, setStatus] = useState('idle'); // idle, loading, success
     const [errorMessage, setErrorMessage] = useState('');
+
+    // Feedback State
+    const [feedback, setFeedback] = useState({ name: '', email: '', message: '' });
+    const [feedbackStatus, setFeedbackStatus] = useState('idle');
+
+    // Scroll tracking for Nav
+    const [scrolled, setScrolled] = useState(false);
+    useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 50);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const validateEmail = (email) => {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!re.test(email)) return 'Please enter a valid email address.';
-
         const domain = email.split('@')[1].toLowerCase();
-        if (TEMP_EMAIL_DOMAINS.includes(domain)) {
-            return 'Temporary or fake email addresses are not allowed.';
-        }
+        if (TEMP_EMAIL_DOMAINS.includes(domain)) return 'Temporary or fake email addresses are not allowed.';
         return null;
     };
 
     const handleSendCode = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         setErrorMessage('');
-
-
         const error = validateEmail(email);
         if (error) {
             setErrorMessage(error);
             return;
         }
-
         setStatus('loading');
-
-        // 1. Generate 4-digit code
         const code = Math.floor(1000 + Math.random() * 9000).toString();
         setGeneratedOtp(code);
 
         try {
-            // 2. Call Vercel Serverless Function to send OTP via Resend
             const response = await fetch("/api/send-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -57,198 +65,323 @@ export default function LandingPage({ onGetStarted }) {
                 setStage('otp');
             } else {
                 const errorData = await response.json();
-                console.error("Serverless Error:", errorData);
                 throw new Error(errorData.message || "Failed to send");
             }
         } catch (err) {
             console.error("Auth flow error:", err);
-            // Fallback for development (if not yet deployed to Vercel)
-
-
             setErrorMessage("We couldn't send the code. Please try again later or contact support.");
             setStatus('idle');
-            setStage('otp');
+            // Allow dev fallback if needed, but for prod we wait for success
+            // setStage('otp'); 
         }
     };
 
     const handleVerifyOtp = async (e) => {
         e.preventDefault();
         setErrorMessage('');
-
         if (otpInput !== generatedOtp) {
             setErrorMessage('Invalid code. Please check your email.');
             return;
         }
-
         setStatus('loading');
-
         try {
-            // 1. [FLOW] Notify ADMIN (zurjkkm@gmail.com) upon successful verification
-            // Using Web3Forms for the admin notification as requested.
             await fetch("https://api.web3forms.com/submit", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify({
                     access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY,
                     subject: "New Verified User on SusuGPT",
-                    message: `Verified User Alert: ${email} has successfully verified their account and joined the platform.`,
+                    message: `Verified User Alert: ${email} has successfully joined the platform.`,
                     from_name: "SusuGPT System Notifications",
                     to_email: "zurjkkm@gmail.com"
                 })
             });
-
-
-
             setStatus('success');
             localStorage.setItem('susugpt_user_email', email);
-
-            setTimeout(() => {
-                onGetStarted(email);
-            }, 1500);
+            setTimeout(() => onGetStarted(email), 1500);
         } catch (err) {
-            console.error("Verification callback error:", err);
-            // Even if admin notification fails, we allow the user to proceed
             setStatus('success');
             onGetStarted(email);
         }
     };
 
+    const handleFeedback = async (e) => {
+        e.preventDefault();
+        setFeedbackStatus('loading');
+        try {
+            await fetch("https://api.web3forms.com/submit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify({
+                    access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY,
+                    subject: "New Feedback - SusuGPT",
+                    from_name: feedback.name,
+                    email: feedback.email,
+                    message: feedback.message,
+                    to_email: "zurjkkm@gmail.com"
+                })
+            });
+            setFeedbackStatus('success');
+            setFeedback({ name: '', email: '', message: '' });
+            setTimeout(() => setFeedbackStatus('idle'), 3000);
+        } catch (err) {
+            setFeedbackStatus('error');
+        }
+    };
+
+    const scrollToAuth = () => {
+        document.getElementById('auth-section').scrollIntoView({ behavior: 'smooth' });
+    };
+
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-blue-500/30">
+        <div className="min-h-screen bg-white dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 font-sans selection:bg-blue-500/20 scroll-smooth">
 
-            {/* Premium Ambient Background */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[60%] bg-blue-500/10 dark:bg-blue-600/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[-15%] right-[-10%] w-[60%] h-[60%] bg-purple-500/10 dark:bg-purple-600/10 rounded-full blur-[120px] animate-pulse-slow" />
-
-                {/* Floating decor */}
-                <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400/20 rounded-full animate-bounce [animation-delay:700ms]" />
-                <div className="absolute bottom-1/4 right-1/3 w-3 h-3 bg-purple-400/20 rounded-full animate-bounce [animation-delay:1000ms]" />
-            </div>
-
-            <div className="max-w-6xl w-full z-10 flex flex-col items-center py-12">
-                {/* Logo & Headline */}
-                <div className="text-center mb-16 space-y-6 animate-in fade-in slide-in-from-top-12 duration-1000 ease-out">
-                    <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/80 dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800 text-[13px] font-bold text-zinc-600 dark:text-zinc-400 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] dark:shadow-none hover:scale-105 transition-transform cursor-default">
-                        <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                        </span>
-                        <span className="tracking-tight">Multi-Model Intelligence v1.2</span>
+            {/* Header / Nav */}
+            <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 py-3' : 'bg-transparent py-6'}`}>
+                <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+                    <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                        <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                            <Bot className="text-white dark:text-black" size={18} />
+                        </div>
+                        <span className="text-xl font-black tracking-tighter">SusuGPT</span>
                     </div>
 
-                    <h1 className="text-7xl md:text-9xl font-black tracking-tighter bg-gradient-to-b from-zinc-950 via-zinc-800 to-zinc-700 dark:from-white dark:via-zinc-200 dark:to-zinc-500 bg-clip-text text-transparent leading-none drop-shadow-sm">
-                        SusuGPT
-                    </h1>
-
-                    <p className="text-xl md:text-2xl text-zinc-500 dark:text-zinc-400 max-w-2xl mx-auto font-medium tracking-tight leading-snug px-4">
-                        The world's most capable AI models,
-                        <span className="text-zinc-950 dark:text-white"> unified </span>
-                        in a single premium interface.
-                    </p>
-                </div>
-
-                {/* Main Content Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 w-full max-w-5xl items-center">
-
-                    {/* Left Side: Feature Cards */}
-                    <div className="lg:col-span-7 grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-left-12 duration-1000 delay-500 fill-mode-both">
-                        {[
-                            {
-                                icon: <Zap className="text-blue-500" />,
-                                title: "Intelligence",
-                                desc: "Access GPT-4o, Claude 3.5 Sonnet, and DeepSeek-V3 instantly.",
-                                color: "bg-blue-500/5"
-                            },
-                            {
-                                icon: <Shield className="text-purple-500" />,
-                                title: "Secure Access",
-                                desc: "End-to-end encryption with mandatory 2-step email verification.",
-                                color: "bg-purple-500/5"
-                            },
-                            {
-                                icon: <Globe className="text-emerald-500" />,
-                                title: "Multi-Model",
-                                desc: "Switch between world-class models mid-conversation seamlessly.",
-                                color: "bg-emerald-500/5"
-                            }
-                        ].map((feature, i) => (
-                            <div key={i} className="group p-6 rounded-[32px] bg-white/60 dark:bg-zinc-900/40 backdrop-blur-md border border-white dark:border-zinc-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:hover:bg-zinc-900/60 transition-all duration-500 flex items-start gap-5">
-                                <div className={`p-4 rounded-2xl ${feature.color} group-hover:scale-110 transition-transform duration-500`}>
-                                    {feature.icon}
-                                </div>
-                                <div className="space-y-1">
-                                    <h3 className="text-xl font-black tracking-tight">{feature.title}</h3>
-                                    <p className="text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">{feature.desc}</p>
-                                </div>
-                            </div>
+                    <div className="hidden md:flex items-center gap-8">
+                        {['Features', 'Security', 'Privacy', 'Contact'].map((item) => (
+                            <a key={item} href={`#${item.toLowerCase()}`} className="text-sm font-bold text-zinc-500 hover:text-black dark:hover:text-white transition-colors">{item}</a>
                         ))}
                     </div>
 
-                    {/* Right Side: Auth Card */}
-                    <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-12 duration-1000 delay-700 fill-mode-both">
-                        <div className="bg-white/90 dark:bg-zinc-900/70 backdrop-blur-2xl p-8 md:p-10 rounded-[48px] border border-white dark:border-zinc-800 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] dark:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] relative overflow-hidden group">
+                    <button
+                        onClick={scrollToAuth}
+                        className="px-5 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-black text-sm font-black hover:scale-105 active:scale-95 transition-all shadow-lg dark:shadow-none"
+                    >
+                        Get Started
+                    </button>
+                </div>
+            </nav>
 
-                            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-blue-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+            <main>
+                {/* Hero Section */}
+                <section className="relative pt-40 pb-20 px-6 overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none -z-10">
+                        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse-slow" />
+                        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse-slow" />
+                    </div>
+
+                    <div className="max-w-7xl mx-auto text-center space-y-8">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-black uppercase tracking-widest animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <Sparkles size={14} />
+                            <span>The Next Generation of AI</span>
+                        </div>
+
+                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both">
+                            Unified Intelligence.<br />
+                            <span className="text-zinc-400 dark:text-zinc-600">Zero Compromise.</span>
+                        </h1>
+
+                        <p className="max-w-2xl mx-auto text-lg md:text-xl text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200 fill-mode-both">
+                            Access GPT-4o, Claude 3.5, and DeepSeek-V3 in one seamless workspace.
+                            Built for professionals who demand speed, security, and world-class reasoning.
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300 fill-mode-both">
+                            <button
+                                onClick={scrollToAuth}
+                                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-black font-black text-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-2xl"
+                            >
+                                Enter Workspace
+                                <ArrowRight size={20} />
+                            </button>
+                            <a href="#features" className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 font-black text-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-center">
+                                Explore Features
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Uses & Capabilities */}
+                <section id="features" className="py-24 px-6 bg-zinc-50 dark:bg-[#080808]">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="text-center mb-16 space-y-4">
+                            <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic">Engineered for Excellence</h2>
+                            <p className="text-zinc-500 font-medium max-w-xl mx-auto">One platform, endless possibilities. Switch between world-leading models mid-thought.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[
+                                { icon: <Cpu />, title: 'Multi-Model Switch', desc: 'Seamlessly shift between GPT-4o, Claude, and DeepSeek in the same thread.' },
+                                { icon: <Layers />, title: 'Context Retention', desc: 'Advanced state management that keeps your context alive across different models.' },
+                                { icon: <Zap />, title: 'Ultra Low Latency', desc: 'Optimized routing for instantaneous responses across all supported AI backends.' },
+                                { icon: <ShieldCheck />, title: 'Enterprise Privacy', desc: 'Your data is encrypted. We never train on your private conversations or inputs.' },
+                                { icon: <MessageSquare />, title: 'Natural Dialogue', desc: 'Refined UI that focuses on clarity and long-form reasoning capabilities.' },
+                                { icon: <Sparkles />, title: 'Vision & Analysis', desc: 'Complex image recognition and data analysis powered by multimodal foundations.' }
+                            ].map((item, i) => (
+                                <div key={i} className="group p-8 rounded-[32px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
+                                    <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mb-6 text-zinc-900 dark:text-white group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500">
+                                        {React.cloneElement(item.icon, { size: 24 })}
+                                    </div>
+                                    <h3 className="text-xl font-black mb-2 tracking-tight">{item.title}</h3>
+                                    <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">{item.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Steps Section */}
+                <section className="py-24 px-6 relative">
+                    <div className="max-w-5xl mx-auto">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                            <div className="space-y-8">
+                                <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Your Path to <br /><span className="text-blue-500">Superintelligence</span></h2>
+                                <div className="space-y-10">
+                                    {[
+                                        { step: '01', title: 'Secure Invitation', desc: 'Enter your email to receive a high-security cryptographic code.' },
+                                        { step: '02', title: 'Instant Verification', desc: 'Validate your identity with our two-step email authentication process.' },
+                                        { step: '03', title: 'Experience SusuGPT', desc: 'Enter a distraction-free workspace of unified AI models and start building.' }
+                                    ].map((s, i) => (
+                                        <div key={i} className="flex gap-6 items-start">
+                                            <span className="text-3xl font-black text-zinc-200 dark:text-zinc-800 tracking-tighter leading-none pt-1">{s.step}</span>
+                                            <div className="space-y-1">
+                                                <h4 className="text-lg font-black tracking-tight uppercase">{s.title}</h4>
+                                                <p className="text-zinc-500 dark:text-zinc-400 font-medium">{s.desc}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="relative group">
+                                <div className="absolute inset-0 bg-blue-500/20 blur-[60px] rounded-full group-hover:bg-blue-500/30 transition-all" />
+                                <div className="relative aspect-square rounded-[48px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 shadow-2xl overflow-hidden">
+                                    <div className="h-full flex flex-col justify-between">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 animate-in fade-in slide-in-from-left-4 duration-500">
+                                                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                                    <Bot size={20} />
+                                                </div>
+                                                <div className="flex-1 space-y-1">
+                                                    <div className="h-2 w-20 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+                                                    <div className="h-2 w-32 bg-zinc-100 dark:bg-zinc-900 rounded-full" />
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 animate-in fade-in slide-in-from-left-4 duration-500 delay-150">
+                                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
+                                                    <Zap size={20} />
+                                                </div>
+                                                <div className="flex-1 space-y-1">
+                                                    <div className="h-2 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+                                                    <div className="h-2 w-40 bg-zinc-100 dark:bg-zinc-900 rounded-full" />
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 animate-in fade-in slide-in-from-left-4 duration-500 delay-300">
+                                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                                    <Sparkles size={20} />
+                                                </div>
+                                                <div className="flex-1 space-y-1">
+                                                    <div className="h-2 w-16 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+                                                    <div className="h-2 w-28 bg-zinc-100 dark:bg-zinc-900 rounded-full" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                                            <div className="flex -space-x-2">
+                                                {[1, 2, 3].map(i => (
+                                                    <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-zinc-900 bg-zinc-200 dark:bg-zinc-800" />
+                                                ))}
+                                            </div>
+                                            <div className="px-4 py-2 rounded-xl bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest animate-pulse">
+                                                Workspace Active
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="absolute -bottom-4 -left-4 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Security & Privacy */}
+                <section id="security" className="py-24 px-6 bg-black text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full blur-[120px]" />
+                    <div className="max-w-7xl mx-auto relative z-10 text-center space-y-12">
+                        <div className="space-y-4">
+                            <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic">Fortified Security</h2>
+                            <p className="text-zinc-500 font-medium max-w-xl mx-auto uppercase tracking-widest text-xs font-black">We take your privacy as seriously as you do</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="p-10 rounded-[40px] bg-zinc-900/50 border border-zinc-800 text-left space-y-6">
+                                <Lock className="text-blue-500" size={40} />
+                                <h3 className="text-2xl font-black tracking-tight">Zero-Knowledge Principles</h3>
+                                <p className="text-zinc-400 font-medium leading-relaxed">
+                                    We do not store your chat logs beyond the current session unless you explicitly choose to save them.
+                                    Our multi-layer verification prevents unauthorized access to your workspace.
+                                </p>
+                            </div>
+                            <div id="privacy" className="p-10 rounded-[40px] bg-zinc-900/50 border border-zinc-800 text-left space-y-6">
+                                <Shield className="text-purple-500" size={40} />
+                                <h3 className="text-2xl font-black tracking-tight">Verified Access Only</h3>
+                                <p className="text-zinc-400 font-medium leading-relaxed">
+                                    Traditional passwords are vulnerable. SusuGPT uses dynamically generated cryptographic tokens
+                                    sent to your verified email for every new entry, ensuring only the owner can enter.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Auth Section */}
+                <section id="auth-section" className="py-32 px-6 bg-zinc-50 dark:bg-[#050505]">
+                    <div className="max-w-xl mx-auto">
+                        <div className="bg-white dark:bg-zinc-900 p-10 md:p-12 rounded-[56px] border border-zinc-200 dark:border-zinc-800 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] dark:shadow-none space-y-10 group relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500 opacity-20 group-hover:opacity-100 transition-opacity duration-1000" />
 
                             {stage === 'email' ? (
-                                <form onSubmit={handleSendCode} className="space-y-8">
-                                    <div className="space-y-3 text-center">
-                                        <div className="w-16 h-16 bg-blue-500/10 rounded-3xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-500">
-                                            <Mail className="text-blue-500" size={32} />
+                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="text-center space-y-3">
+                                        <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <Mail className="text-zinc-900 dark:text-white" size={28} />
                                         </div>
-                                        <h3 className="text-2xl font-black tracking-tight">Access Pro</h3>
-                                        <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Enter your email to receive an invitation.</p>
+                                        <h3 className="text-3xl font-black tracking-tighter italic">Unlock Intelligence</h3>
+                                        <p className="text-zinc-500 font-medium">Claim your secure workspace access.</p>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <div className="relative group/input">
-                                            <input
-                                                type="email"
-                                                required
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                placeholder="name@example.com"
-                                                className="w-full px-6 py-5 rounded-[24px] bg-zinc-50 dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 focus:border-blue-500 dark:focus:border-blue-500 outline-none text-lg font-bold transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-700 shadow-inner"
-                                            />
-                                        </div>
-
-                                        {errorMessage && (
-                                            <p className="text-red-500 text-[11px] font-bold uppercase tracking-widest text-center animate-shake">
-                                                {errorMessage}
-                                            </p>
-                                        )}
-
+                                    <form onSubmit={handleSendCode} className="space-y-4">
+                                        <input
+                                            type="email"
+                                            required
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="Enter your email"
+                                            className="w-full px-6 py-5 rounded-3xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-blue-500 outline-none text-lg font-bold transition-all shadow-inner"
+                                        />
+                                        {errorMessage && <p className="text-red-500 text-xs font-black uppercase text-center animate-shake tracking-widest">{errorMessage}</p>}
                                         <button
                                             type="submit"
                                             disabled={status === 'loading'}
-                                            className="w-full py-5 rounded-[24px] bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 font-black text-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] dark:shadow-none disabled:opacity-50 relative overflow-hidden group/btn"
+                                            className="w-full py-5 rounded-3xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 font-black text-lg hover:scale-[1.02] active:scale-[.98] transition-all flex items-center justify-center gap-2 shadow-2xl shadow-blue-500/10"
                                         >
-                                            {status === 'loading' ? (
-                                                <Loader2 className="animate-spin" />
-                                            ) : (
-                                                <>
-                                                    <span>Get Invitation</span>
-                                                    <ArrowRight size={22} className="group-hover/btn:translate-x-1 transition-transform" />
-                                                </>
-                                            )}
+                                            {status === 'loading' ? <Loader2 className="animate-spin" /> : <><span>Start Your Journey</span><ChevronRight /></>}
                                         </button>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
                             ) : (
-                                <form onSubmit={handleVerifyOtp} className="space-y-8">
-                                    <div className="text-center space-y-4">
-                                        <div className="inline-flex p-5 rounded-[32px] bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 mb-2">
-                                            <Shield size={40} />
+                                <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                                    <div className="text-center space-y-3">
+                                        <div className="w-16 h-16 bg-blue-50 border border-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <Lock className="text-blue-500" size={28} />
                                         </div>
-                                        <h3 className="text-2xl font-black tracking-tight">Verify Identity</h3>
-                                        <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
-                                            Check your inbox for the security code sent to <br />
-                                            <span className="text-zinc-950 dark:text-white font-bold">{email}</span>
+                                        <h3 className="text-3xl font-black tracking-tighter italic">Verify Identity</h3>
+                                        <p className="text-zinc-500 font-medium text-sm leading-relaxed px-4 text-center">
+                                            We've sent a 4-digit security code to <br />
+                                            <span className="text-black dark:text-white font-black">{email}</span>
                                         </p>
                                     </div>
 
-                                    <div className="space-y-6">
+                                    <form onSubmit={handleVerifyOtp} className="space-y-6">
                                         <div className="flex justify-center">
                                             <input
                                                 type="text"
@@ -258,70 +391,128 @@ export default function LandingPage({ onGetStarted }) {
                                                 value={otpInput}
                                                 onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
                                                 placeholder="0000"
-                                                className="w-56 tracking-[0.8em] text-center py-6 rounded-3xl bg-zinc-50 dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 focus:border-blue-500 outline-none text-4xl font-black shadow-inner"
+                                                className="w-48 tracking-[0.8em] text-center py-6 rounded-3xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-blue-500 outline-none text-4xl font-black shadow-inner"
                                             />
                                         </div>
-
-                                        {errorMessage && (
-                                            <p className="text-red-500 text-[11px] font-bold uppercase tracking-widest text-center animate-shake">
-                                                {errorMessage}
-                                            </p>
-                                        )}
-
-                                        <div className="space-y-4">
+                                        {errorMessage && <p className="text-red-500 text-xs font-black uppercase text-center animate-shake tracking-widest">{errorMessage}</p>}
+                                        <div className="space-y-3">
                                             <button
                                                 type="submit"
                                                 disabled={status === 'loading' || otpInput.length < 4}
-                                                className="w-full py-5 rounded-[24px] bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 font-black text-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-2xl disabled:opacity-30"
+                                                className="w-full py-5 rounded-3xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 font-black text-lg hover:scale-[1.02] active:scale-[.98] transition-all flex items-center justify-center gap-2 shadow-2xl"
                                             >
-                                                {status === 'loading' ? (
-                                                    <Loader2 className="animate-spin" />
-                                                ) : status === 'success' ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <CheckCircle2 className="text-green-500" />
-                                                        <span>Verified</span>
-                                                    </div>
-                                                ) : (
-                                                    <span>Open SusuGPT</span>
-                                                )}
+                                                {status === 'loading' ? <Loader2 className="animate-spin" /> : <span>Access Workspace</span>}
                                             </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => setStage('email')}
-                                                className="w-full text-xs font-bold text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 transition-colors uppercase tracking-[0.2em]"
-                                            >
-                                                Change email address
-                                            </button>
+                                            <button type="button" onClick={() => setStage('email')} className="w-full text-xs font-black text-zinc-400 hover:text-black dark:hover:text-white transition-colors uppercase tracking-widest">Wrong email?</button>
                                         </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
                             )}
                         </div>
                     </div>
-                </div>
+                </section>
 
-                {/* Bottom Trust Indicators */}
-                <div className="mt-20 flex flex-wrap justify-center gap-10 opacity-30 grayscale hover:grayscale-0 hover:opacity-60 transition-all duration-700 animate-in fade-in slide-in-from-bottom-8 delay-[1200ms] fill-mode-both">
-                    {[
-                        { icon: <Shield size={18} />, label: "Enterprise Security" },
-                        { icon: <Globe size={18} />, label: "Global AI Integration" }
-                    ].map((badge, i) => (
-                        <div key={i} className="flex items-center gap-3 text-sm font-black tracking-[0.15em] uppercase whitespace-nowrap">
-                            {badge.icon}
-                            <span>{badge.label}</span>
+                {/* Contact & Feedback */}
+                <section id="contact" className="py-24 px-6 relative">
+                    <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
+                        <div className="space-y-6">
+                            <h2 className="text-4xl font-black tracking-tighter">Connection & <br />Support</h2>
+                            <p className="text-zinc-500 font-medium leading-relaxed">
+                                Have ideas, questions, or just want to tell us about your experience?
+                                Your feedback shapes the future of SusuGPT.
+                            </p>
+                            <div className="space-y-4 pt-4">
+                                <div className="flex items-center gap-4 text-zinc-600 dark:text-zinc-400">
+                                    <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center"><Mail size={18} /></div>
+                                    <span className="font-bold">support@soorajp.com</span>
+                                </div>
+                                <div className="flex items-center gap-4 text-zinc-600 dark:text-zinc-400">
+                                    <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center"><Headphones size={18} /></div>
+                                    <span className="font-bold">24/7 Priority Support</span>
+                                </div>
+                            </div>
                         </div>
-                    ))}
-                </div>
-            </div>
 
-            <footer className="absolute bottom-6 w-full text-center space-y-2 z-20">
-                <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.4em]">
-                    © 2026 SusuGPT • The Future of Intelligence is Unified
-                </p>
-                <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em]">
-                    Developed by <a href="https://soorajp.com" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Sooraj Puliyath</a>
-                </p>
+                        <div className="p-8 rounded-[40px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl">
+                            <form onSubmit={handleFeedback} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <input
+                                        type="text" required placeholder="Name"
+                                        value={feedback.name} onChange={(e) => setFeedback({ ...feedback, name: e.target.value })}
+                                        className="w-full px-5 py-4 rounded-2xl bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 focus:border-zinc-400 outline-none font-bold placeholder:text-zinc-400 shadow-inner text-sm"
+                                    />
+                                    <input
+                                        type="email" required placeholder="Email"
+                                        value={feedback.email} onChange={(e) => setFeedback({ ...feedback, email: e.target.value })}
+                                        className="w-full px-5 py-4 rounded-2xl bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 focus:border-zinc-400 outline-none font-bold placeholder:text-zinc-400 shadow-inner text-sm"
+                                    />
+                                </div>
+                                <textarea
+                                    required placeholder="Your message or feedback..." rows="4"
+                                    value={feedback.message} onChange={(e) => setFeedback({ ...feedback, message: e.target.value })}
+                                    className="w-full px-5 py-4 rounded-2xl bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 focus:border-zinc-400 outline-none font-bold placeholder:text-zinc-400 shadow-inner text-sm resize-none"
+                                />
+                                <button
+                                    type="submit" disabled={feedbackStatus === 'loading'}
+                                    className="w-full py-4 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-black flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-xl"
+                                >
+                                    {feedbackStatus === 'loading' ? <Loader2 className="animate-spin" /> : feedbackStatus === 'success' ? <div className="flex items-center gap-2"><CheckCircle2 className="text-green-500" /><span>Sent Successfully</span></div> : <><span>Submit Intelligence Report</span><Send size={16} /></>}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            {/* Footer */}
+            <footer className="py-20 px-6 border-t border-zinc-100 dark:border-zinc-900">
+                <div className="max-w-7xl mx-auto flex flex-col items-center space-y-12">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-12 w-full text-center md:text-left">
+                        <div className="space-y-6 col-span-2 md:col-span-1">
+                            <div className="flex items-center gap-2 justify-center md:justify-start">
+                                <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center"><Bot className="text-white dark:text-black" size={18} /></div>
+                                <span className="text-xl font-black tracking-tighter">SusuGPT</span>
+                            </div>
+                            <p className="text-zinc-500 font-medium text-sm leading-relaxed">
+                                Redefining the boundaries of multi-model collaboration.
+                                Secure, unified, and uncompromising.
+                            </p>
+                        </div>
+                        <div className="space-y-6">
+                            <h4 className="font-black text-xs uppercase tracking-widest text-zinc-400">Products</h4>
+                            <ul className="space-y-4 text-sm font-bold text-zinc-500">
+                                <li><a href="#" className="hover:text-black dark:hover:text-white transition-colors">Workspace</a></li>
+                                <li><a href="#" className="hover:text-black dark:hover:text-white transition-colors">Workspace</a></li>
+                                <li><a href="#" className="hover:text-black dark:hover:text-white transition-colors">Intelligence Hub</a></li>
+                            </ul>
+                        </div>
+                        <div className="space-y-6">
+                            <h4 className="font-black text-xs uppercase tracking-widest text-zinc-400">Company</h4>
+                            <ul className="space-y-4 text-sm font-bold text-zinc-500">
+                                <li><a href="#about" className="hover:text-black dark:hover:text-white transition-colors">About Us</a></li>
+                                <li><a href="#security" className="hover:text-black dark:hover:text-white transition-colors">Security</a></li>
+                                <li><a href="#privacy" className="hover:text-black dark:hover:text-white transition-colors">Privacy Policy</a></li>
+                            </ul>
+                        </div>
+                        <div className="space-y-6">
+                            <h4 className="font-black text-xs uppercase tracking-widest text-zinc-400">Connect</h4>
+                            <div className="flex items-center justify-center md:justify-start gap-4">
+                                <a href="#" className="p-3 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"><Twitter size={18} /></a>
+                                <a href="#" className="p-3 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"><Github size={18} /></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="w-full flex flex-col md:flex-row items-center justify-between pt-12 border-t border-zinc-100 dark:border-zinc-900 space-y-6 md:space-y-0 text-center md:text-left">
+                        <p className="text-xs font-black text-zinc-300 dark:text-zinc-700 uppercase tracking-widest leading-none">
+                            © 2026 SusuGPT • Designed for the 1%
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.3em]">
+                            <span>Designed by</span>
+                            <a href="https://soorajp.com" target="_blank" rel="noopener noreferrer" className="text-zinc-900 dark:text-white hover:text-blue-500 transition-colors">Sooraj Puliyath</a>
+                        </div>
+                    </div>
+                </div>
             </footer>
         </div>
     );
