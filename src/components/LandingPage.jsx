@@ -30,7 +30,7 @@ export default function LandingPage({ onGetStarted }) {
     const handleSendCode = async (e) => {
         e.preventDefault();
         setErrorMessage('');
-        console.log("Attempting to send code to:", email);
+
 
         const error = validateEmail(email);
         if (error) {
@@ -53,7 +53,6 @@ export default function LandingPage({ onGetStarted }) {
             });
 
             if (response.ok) {
-                console.log("Serverless Mail Success!");
                 setStatus('idle');
                 setStage('otp');
             } else {
@@ -64,7 +63,7 @@ export default function LandingPage({ onGetStarted }) {
         } catch (err) {
             console.error("Auth flow error:", err);
             // Fallback for development (if not yet deployed to Vercel)
-            console.log(`%c [DEBUG] Code for ${email}: ${code}`, "color: white; background: #3b82f6; font-size: 1.2rem; padding: 10px; border-radius: 5px; font-weight: bold;");
+
 
             setErrorMessage("We couldn't send the code. Please try again later or contact support.");
             setStatus('idle');
@@ -98,7 +97,7 @@ export default function LandingPage({ onGetStarted }) {
                 })
             });
 
-            console.log(`%c [ADMIN NOTIFIED] Success sent for ${email}`, "color: #10b981; font-weight: bold;");
+
 
             setStatus('success');
             localStorage.setItem('susugpt_user_email', email);
