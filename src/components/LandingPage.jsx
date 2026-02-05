@@ -71,8 +71,6 @@ export default function LandingPage({ onGetStarted }) {
             console.error("Auth flow error:", err);
             setErrorMessage("We couldn't send the code. Please try again later or contact support.");
             setStatus('idle');
-            // Allow dev fallback if needed, but for prod we wait for success
-            // setStage('otp'); 
         }
     };
 
@@ -134,7 +132,7 @@ export default function LandingPage({ onGetStarted }) {
     };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 font-sans selection:bg-blue-500/20 scroll-smooth">
+        <div className="min-h-screen bg-white dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 font-sans selection:bg-zinc-900/10 dark:selection:bg-white/10 scroll-smooth">
 
             {/* Header / Nav */}
             <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 py-3' : 'bg-transparent py-6'}`}>
@@ -165,13 +163,13 @@ export default function LandingPage({ onGetStarted }) {
                 {/* Hero Section */}
                 <section className="relative pt-40 pb-20 px-6 overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full pointer-events-none -z-10">
-                        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse-slow" />
-                        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse-slow" />
+                        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-zinc-500/5 rounded-full blur-[120px] animate-pulse-slow" />
+                        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-zinc-500/5 rounded-full blur-[120px] animate-pulse-slow" />
                     </div>
 
                     <div className="max-w-7xl mx-auto text-center space-y-8">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-black uppercase tracking-widest animate-in fade-in slide-in-from-bottom-4 duration-700">
-                            <Sparkles size={14} />
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-[10px] font-black uppercase tracking-[0.2em] animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <Sparkles size={14} className="text-zinc-400" />
                             <span>The Next Generation of AI</span>
                         </div>
 
@@ -218,7 +216,7 @@ export default function LandingPage({ onGetStarted }) {
                                 { icon: <Sparkles />, title: 'Vision & Analysis', desc: 'Complex image recognition and data analysis powered by multimodal foundations.' }
                             ].map((item, i) => (
                                 <div key={i} className="group p-8 rounded-[32px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
-                                    <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mb-6 text-zinc-900 dark:text-white group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500">
+                                    <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mb-6 text-zinc-900 dark:text-white group-hover:scale-110 group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all duration-500">
                                         {React.cloneElement(item.icon, { size: 24 })}
                                     </div>
                                     <h3 className="text-xl font-black mb-2 tracking-tight">{item.title}</h3>
@@ -234,7 +232,7 @@ export default function LandingPage({ onGetStarted }) {
                     <div className="max-w-5xl mx-auto">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                             <div className="space-y-8">
-                                <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Your Path to <br /><span className="text-blue-500">Superintelligence</span></h2>
+                                <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Your Path to <br /><span className="text-zinc-900 dark:text-zinc-100">Superintelligence</span></h2>
                                 <div className="space-y-10">
                                     {[
                                         { step: '01', title: 'Secure Invitation', desc: 'Enter your email to receive a high-security cryptographic code.' },
@@ -252,12 +250,12 @@ export default function LandingPage({ onGetStarted }) {
                                 </div>
                             </div>
                             <div className="relative group">
-                                <div className="absolute inset-0 bg-blue-500/20 blur-[60px] rounded-full group-hover:bg-blue-500/30 transition-all" />
-                                <div className="relative aspect-square rounded-[48px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 shadow-2xl overflow-hidden">
+                                <div className="absolute inset-0 bg-zinc-500/5 blur-[60px] rounded-full group-hover:bg-zinc-500/10 transition-all" />
+                                <div className="relative aspect-square rounded-[48px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 shadow-2xl overflow-hidden text-zinc-900 dark:text-zinc-100">
                                     <div className="h-full flex flex-col justify-between">
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 animate-in fade-in slide-in-from-left-4 duration-500">
-                                                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                                <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-zinc-100">
                                                     <Bot size={20} />
                                                 </div>
                                                 <div className="flex-1 space-y-1">
@@ -266,7 +264,7 @@ export default function LandingPage({ onGetStarted }) {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 animate-in fade-in slide-in-from-left-4 duration-500 delay-150">
-                                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
+                                                <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-zinc-100">
                                                     <Zap size={20} />
                                                 </div>
                                                 <div className="flex-1 space-y-1">
@@ -275,7 +273,7 @@ export default function LandingPage({ onGetStarted }) {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 animate-in fade-in slide-in-from-left-4 duration-500 delay-300">
-                                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                                <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-zinc-100">
                                                     <Sparkles size={20} />
                                                 </div>
                                                 <div className="flex-1 space-y-1">
@@ -291,12 +289,12 @@ export default function LandingPage({ onGetStarted }) {
                                                     <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-zinc-900 bg-zinc-200 dark:bg-zinc-800" />
                                                 ))}
                                             </div>
-                                            <div className="px-4 py-2 rounded-xl bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest animate-pulse">
+                                            <div className="px-4 py-2 rounded-xl bg-black dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-widest">
                                                 Workspace Active
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="absolute -bottom-4 -left-4 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl" />
+                                    <div className="absolute -bottom-4 -left-4 w-40 h-40 bg-zinc-500/5 rounded-full blur-3xl" />
                                 </div>
                             </div>
                         </div>
@@ -305,7 +303,7 @@ export default function LandingPage({ onGetStarted }) {
 
                 {/* Security & Privacy */}
                 <section id="security" className="py-24 px-6 bg-black text-white relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full blur-[120px]" />
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-zinc-900/50 rounded-full blur-[120px]" />
                     <div className="max-w-7xl mx-auto relative z-10 text-center space-y-12">
                         <div className="space-y-4">
                             <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic">Fortified Security</h2>
@@ -314,7 +312,7 @@ export default function LandingPage({ onGetStarted }) {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="p-10 rounded-[40px] bg-zinc-900/50 border border-zinc-800 text-left space-y-6">
-                                <Lock className="text-blue-500" size={40} />
+                                <Lock className="text-zinc-100" size={40} />
                                 <h3 className="text-2xl font-black tracking-tight">Zero-Knowledge Principles</h3>
                                 <p className="text-zinc-400 font-medium leading-relaxed">
                                     We do not store your chat logs beyond the current session unless you explicitly choose to save them.
@@ -322,7 +320,7 @@ export default function LandingPage({ onGetStarted }) {
                                 </p>
                             </div>
                             <div id="privacy" className="p-10 rounded-[40px] bg-zinc-900/50 border border-zinc-800 text-left space-y-6">
-                                <Shield className="text-purple-500" size={40} />
+                                <Shield className="text-zinc-100" size={40} />
                                 <h3 className="text-2xl font-black tracking-tight">Verified Access Only</h3>
                                 <p className="text-zinc-400 font-medium leading-relaxed">
                                     Traditional passwords are vulnerable. SusuGPT uses dynamically generated cryptographic tokens
@@ -336,8 +334,8 @@ export default function LandingPage({ onGetStarted }) {
                 {/* Auth Section */}
                 <section id="auth-section" className="py-32 px-6 bg-zinc-50 dark:bg-[#050505]">
                     <div className="max-w-xl mx-auto">
-                        <div className="bg-white dark:bg-zinc-900 p-10 md:p-12 rounded-[56px] border border-zinc-200 dark:border-zinc-800 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] dark:shadow-none space-y-10 group relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500 opacity-20 group-hover:opacity-100 transition-opacity duration-1000" />
+                        <div className="bg-white dark:bg-zinc-900 p-10 md:p-12 rounded-[56px] border border-zinc-200 dark:border-zinc-800 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.05)] dark:shadow-none space-y-10 group relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-zinc-200 via-zinc-400 to-zinc-200 dark:from-zinc-800 dark:via-zinc-600 dark:to-zinc-800 opacity-20 group-hover:opacity-100 transition-opacity duration-1000" />
 
                             {stage === 'email' ? (
                                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -356,13 +354,13 @@ export default function LandingPage({ onGetStarted }) {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             placeholder="Enter your email"
-                                            className="w-full px-6 py-5 rounded-3xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-blue-500 outline-none text-lg font-bold transition-all shadow-inner"
+                                            className="w-full px-6 py-5 rounded-3xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-black dark:focus:border-white outline-none text-lg font-bold transition-all shadow-inner"
                                         />
                                         {errorMessage && <p className="text-red-500 text-xs font-black uppercase text-center animate-shake tracking-widest">{errorMessage}</p>}
                                         <button
                                             type="submit"
                                             disabled={status === 'loading'}
-                                            className="w-full py-5 rounded-3xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 font-black text-lg hover:scale-[1.02] active:scale-[.98] transition-all flex items-center justify-center gap-2 shadow-2xl shadow-blue-500/10"
+                                            className="w-full py-5 rounded-3xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 font-black text-lg hover:scale-[1.02] active:scale-[.98] transition-all flex items-center justify-center gap-2 shadow-2xl"
                                         >
                                             {status === 'loading' ? <Loader2 className="animate-spin" /> : <><span>Start Your Journey</span><ChevronRight /></>}
                                         </button>
@@ -371,8 +369,8 @@ export default function LandingPage({ onGetStarted }) {
                             ) : (
                                 <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
                                     <div className="text-center space-y-3">
-                                        <div className="w-16 h-16 bg-blue-50 border border-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Lock className="text-blue-500" size={28} />
+                                        <div className="w-16 h-16 bg-zinc-50 border border-zinc-100 dark:bg-zinc-800 dark:border-zinc-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <Lock className="text-zinc-900 dark:text-zinc-100" size={28} />
                                         </div>
                                         <h3 className="text-3xl font-black tracking-tighter italic">Verify Identity</h3>
                                         <p className="text-zinc-500 font-medium text-sm leading-relaxed px-4 text-center">
@@ -391,7 +389,7 @@ export default function LandingPage({ onGetStarted }) {
                                                 value={otpInput}
                                                 onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
                                                 placeholder="0000"
-                                                className="w-48 tracking-[0.8em] text-center py-6 rounded-3xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-blue-500 outline-none text-4xl font-black shadow-inner"
+                                                className="w-48 tracking-[0.8em] text-center py-6 rounded-3xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-black dark:focus:border-white outline-none text-4xl font-black shadow-inner"
                                             />
                                         </div>
                                         {errorMessage && <p className="text-red-500 text-xs font-black uppercase text-center animate-shake tracking-widest">{errorMessage}</p>}
@@ -456,7 +454,7 @@ export default function LandingPage({ onGetStarted }) {
                                     type="submit" disabled={feedbackStatus === 'loading'}
                                     className="w-full py-4 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-black flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-xl"
                                 >
-                                    {feedbackStatus === 'loading' ? <Loader2 className="animate-spin" /> : feedbackStatus === 'success' ? <div className="flex items-center gap-2"><CheckCircle2 className="text-green-500" /><span>Sent Successfully</span></div> : <><span>Submit Intelligence Report</span><Send size={16} /></>}
+                                    {feedbackStatus === 'loading' ? <Loader2 className="animate-spin" /> : feedbackStatus === 'success' ? <div className="flex items-center gap-2"><CheckCircle2 className="text-zinc-900 dark:text-white" /><span>Sent Successfully</span></div> : <><span>Submit Intelligence Report</span><Send size={16} /></>}
                                 </button>
                             </form>
                         </div>
@@ -481,7 +479,6 @@ export default function LandingPage({ onGetStarted }) {
                         <div className="space-y-6">
                             <h4 className="font-black text-xs uppercase tracking-widest text-zinc-400">Products</h4>
                             <ul className="space-y-4 text-sm font-bold text-zinc-500">
-                                <li><a href="#" className="hover:text-black dark:hover:text-white transition-colors">Workspace</a></li>
                                 <li><a href="#" className="hover:text-black dark:hover:text-white transition-colors">Workspace</a></li>
                                 <li><a href="#" className="hover:text-black dark:hover:text-white transition-colors">Intelligence Hub</a></li>
                             </ul>
@@ -509,7 +506,7 @@ export default function LandingPage({ onGetStarted }) {
                         </p>
                         <div className="flex items-center gap-1.5 text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.3em]">
                             <span>Designed by</span>
-                            <a href="https://soorajp.com" target="_blank" rel="noopener noreferrer" className="text-zinc-900 dark:text-white hover:text-blue-500 transition-colors">Sooraj Puliyath</a>
+                            <a href="https://soorajp.com" target="_blank" rel="noopener noreferrer" className="text-zinc-900 dark:text-white hover:text-zinc-500 transition-colors">Sooraj Puliyath</a>
                         </div>
                     </div>
                 </div>
