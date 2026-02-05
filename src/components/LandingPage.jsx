@@ -45,27 +45,29 @@ export default function LandingPage({ onGetStarted }) {
 
         try {
             // 2. [FLOW] Send the code to the USER's email address.
-            // Note: Since Web3Forms doesn't support dynamic recipients in the free tier, 
-            // we simulate this by logging the code for the user and notifying the admin.
-            console.log(`%c [USER AUTH] Verification Code for ${email}: ${code}`, "color: white; background: #3b82f6; font-size: 1.2rem; padding: 10px; border-radius: 5px; font-weight: bold;");
-
-            // Notify Admin about the verification attempt
-            await fetch("https://api.web3forms.com/submit", {
+            // Note: This triggers the Auto-Response in Web3Forms if enabled in your dashboard.
+            const response = await fetch("https://api.web3forms.com/submit", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify({
                     access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY,
-                    subject: "Verification Initialized",
-                    message: `Admin notification: User ${email} has requested a verification code. The code generated is: ${code}`,
+                    email: email, // Required to trigger auto-response to the user
+                    subject: "Your SusuGPT Verification Code",
+                    message: `Your verification code is: ${code}`,
                     from_name: "SusuGPT Auth"
                 })
             });
 
-            setStatus('idle');
-            setStage('otp');
+            if (response.ok) {
+                console.log(`%c [SUCCESS] Code sent to ${email}`, "color: #10b981; font-weight: bold;");
+                setStatus('idle');
+                setStage('otp');
+            } else {
+                throw new Error("Relay failed");
+            }
         } catch (err) {
             console.error("Auth error:", err);
-            setStage('otp');
+            setErrorMessage("Failed to send code. Please try again later.");
             setStatus('idle');
         }
     };
