@@ -46,7 +46,7 @@ export default function LandingPage({ onGetStarted }) {
                     "Accept": "application/json"
                 },
                 body: JSON.stringify({
-                    access_key: "YOUR_WEB3FORMS_ACCESS_KEY", // Replace with actual key from web3forms.com
+                    access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY,
                     email: email,
                     subject: "New User Joined SusuGPT",
                     message: `A new user has started using SusuGPT with email: ${email}`,
