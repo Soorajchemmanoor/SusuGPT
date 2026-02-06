@@ -14,7 +14,6 @@ const API_KEY = import.meta.env.VITE_OPEN_ROUTER_API_KEY;
 const MODELS = [
   { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "OpenAI", vision: true, paid: true },
   { id: "google/gemma-3-12b-it:free", name: "Gemma 3 12B", provider: "Google", vision: false, free: true },
-  { id: "mistralai/mistral-small-3.1-24b-instruct:free", name: "Mistral Small", provider: "Mistral", vision: false, free: true },
   { id: "deepseek/deepseek-chat", name: "DeepSeek V3", provider: "DeepSeek", vision: false, paid: true },
   { id: "anthropic/claude-3-haiku", name: "Claude 3 Haiku", provider: "Anthropic", vision: true, paid: true }
 ];
