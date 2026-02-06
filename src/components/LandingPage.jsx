@@ -213,6 +213,7 @@ export default function LandingPage({ onGetStarted }) {
                                 { icon: <Zap />, title: 'Ultra Low Latency', desc: 'Optimized routing for instantaneous responses across all supported AI backends.' },
                                 { icon: <ShieldCheck />, title: 'Enterprise Privacy', desc: 'Your data is encrypted. We never train on your private conversations or inputs.' },
                                 { icon: <MessageSquare />, title: 'Natural Dialogue', desc: 'Refined UI that focuses on clarity and long-form reasoning capabilities.' },
+                                { icon: <Headphones />, title: 'Voice Interaction', desc: 'Speak to your AI and hear responses naturally with high-quality synthesis.' },
                                 { icon: <Sparkles />, title: 'Vision & Analysis', desc: 'Complex image recognition and data analysis powered by multimodal foundations.' }
                             ].map((item, i) => (
                                 <div key={i} className="group p-8 rounded-[32px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
